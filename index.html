@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RX-0 TAIPEI DEBUGGER // NT-D SYSTEM COCKPIT</title>
+  
+  <!-- Fonts: Orbitron, Rajdhani, Share Tech Mono, Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="ntd-mode">
+  <!-- CRT Scanlines and Cockpit Vignette Overlay -->
+  <div class="crt-overlay" aria-hidden="true"></div>
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- ============================================================== -->
+  <!-- 1. NT-D STARTUP SEQUENCE OVERLAY (UC GUNDAM COCKPIT BOOT)      -->
+  <!-- ============================================================== -->
+  <div id="ntd-boot-screen" class="ntd-boot-screen">
+    
+    <!-- Cockpit Space Background Brackets -->
+    <div class="cockpit-space-bg" aria-hidden="true">
+      <div class="hex-radar-wing wing-left"></div>
+      <div class="hex-radar-wing wing-right"></div>
+    </div>
+
+    <!-- Center Monitor Bezel Frame (Matches Video Screenshot) -->
+    <div class="monitor-bezel-window" id="monitor-window">
+      <!-- Top Monitor Bezel Bar -->
+      <div class="monitor-top-bezel">
+        <div class="bezel-accent-screw"></div>
+        <div class="bezel-title-wrap">
+          <span class="bezel-title">FULL PSYCHO-FRAME PROTOTYPE MOBILE SUIT</span>
+          <span class="bezel-sub">RX-0 // DEBUG-01</span>
+        </div>
+        <div class="bezel-accent-screw"></div>
+      </div>
+
+      <!-- Monitor Screen Viewport -->
+      <div class="monitor-display-area" id="monitor-display">
+        
+        <!-- Canvas: Dynamic Purple Flame & Equalizer Glitch Streaks -->
+        <canvas id="ntd-flame-canvas" class="ntd-flame-canvas" width="860" height="420"></canvas>
+
+        <!-- Red Concentric Reticle Dial (Right-aligned dial from screenshot) -->
+        <div class="monitor-reticle-dial" aria-hidden="true">
+          <div class="dial-ring dial-outer"></div>
+          <div class="dial-ring dial-mid"></div>
+          <div class="dial-ring dial-inner"></div>
+          <div class="dial-crosshair-h"></div>
+          <div class="dial-crosshair-v"></div>
+          <div class="dial-radial-ticks"></div>
+        </div>
+
+        <!-- Upper/Lower Horizontal Tech Bars -->
+        <div class="monitor-h-bar bar-top"></div>
+        <div class="monitor-h-bar bar-bottom"></div>
+
+        <!-- Giant NT-D Logo with Purple Flame Glow & Sharp Serifs -->
+        <div class="ntd-brand-wrapper">
+          <div class="ntd-logo-sharp" id="ntd-logo-text" data-text="NT-D">NT-D</div>
+        </div>
+
+        <!-- 10-Second Countdown & Overdrive Status (Active after click) -->
+        <div class="ntd-countdown-overlay" id="ntd-countdown-overlay">
+          <div class="countdown-warning-title blink-red">
+            ⚠ PSYCHO-FRAME BIO-SENSOR OVERDRIVE ENGAGED ⚠
+          </div>
+          <div class="countdown-timer-wrap">
+            <span class="countdown-label">DESTROY MODE ENGAGING IN:</span>
+            <span class="countdown-digits" id="countdown-digits">10.0s</span>
+          </div>
+          <div class="countdown-progress-bar">
+            <div class="countdown-progress-fill" id="countdown-fill"></div>
+          </div>
+          <div class="countdown-sub-logs" id="countdown-sub-logs">
+            > RESONANCE FREQUENCY EXPANDING TO 120% CRITICAL...
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Monitor Bezel Bar -->
+      <div class="monitor-bottom-bezel">
+        <span class="bezel-foot-tag">STATUS: <b id="monitor-foot-status">STANDBY FOR ENGAGEMENT</b></span>
+        <span class="bezel-foot-coords">TPE WATERFRONT 25.0489°N, 121.5712°E</span>
+      </div>
+    </div>
+
+    <!-- Action Bar & Controls -->
+    <div class="boot-action-bar">
+      <button id="btn-engage-ntd" class="btn-ntd-primary btn-ignite-ntd">
+        <span class="btn-glow"></span>
+        <span class="btn-icon">⚡</span>
+        <span class="btn-text" id="engage-btn-text">ACTIVATE NT-D SYSTEM // 啟動毀滅模式</span>
+      </button>
+      <button id="btn-toggle-sound" class="btn-ntd-ghost">
+        <span id="sound-icon">🔊</span> <span id="sound-text">SOUND FX: ON</span>
+      </button>
+    </div>
+
+    <div class="boot-audio-prompt blink-red" id="boot-prompt-text">
+      🔥 點擊按鈕啟動 NT-D 紫色火焰特效與《UNICORN》BGM，10 秒後進入駕駛艙 🔥
+    </div>
+
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 2. MAIN COCKPIT HUD INTERFACE (NT-D THEME)                    -->
+  <!-- ============================================================== -->
+  <div class="cockpit-container" id="main-cockpit">
+    
+    <!-- Top Cockpit Status Bar -->
+    <header class="hud-topbar">
+      <div class="topbar-left">
+        <div class="cockpit-badge">
+          <span class="badge-icon">⬢</span>
+          <span class="badge-title">RX-0 ROVER [DEBUGGER]</span>
+        </div>
+        <div class="system-mode-tag">
+          <span class="mode-label">STATUS</span>
+          <span class="mode-value mode-destroy">DESTROY MODE // NT-D ACTIVE</span>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <div class="psycho-sync-meter">
+          <span class="meter-label">PSYCHO-FRAME RESONANCE</span>
+          <div class="meter-bar-wrap">
+            <div class="meter-bar" id="resonance-meter-bar" style="width: 94%;"></div>
+          </div>
+          <span class="meter-val" id="resonance-val">94.8% CRITICAL</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="clock-display">
+          <span class="clock-label">TAIPEI TIME</span>
+          <span class="clock-time" id="live-clock">22:30:45</span>
+        </div>
+
+        <!-- NT-D BGM Player Widget -->
+        <div class="bgm-player-widget" id="bgm-widget">
+          <button id="btn-toggle-bgm" class="btn-action-small btn-bgm" title="切換 BGM 播放/暫停">
+            <span class="eq-bars">
+              <span></span><span></span><span></span><span></span>
+            </span>
+            <span id="bgm-btn-text">🎵 BGM: UNICORN</span>
+          </button>
+          <input type="range" id="bgm-volume" min="0" max="1" step="0.05" value="0.6" class="hud-volume-slider" title="BGM 音量調節">
+        </div>
+
+        <button id="btn-reboot-ntd" class="btn-action-small" title="重新觸發 NT-D 啟動過場動畫">
+          ⚡ RE-TRIGGER NT-D
+        </button>
+        <button id="btn-audio-control" class="btn-action-small">
+          🔊 AUDIO ON
+        </button>
+      </div>
+    </header>
+
+    <!-- HTML5 Audio Element for Gundam UC BGM -->
+    <audio id="ntd-bgm" src="bgm.mp3" loop preload="auto" autoplay></audio>
+
+    <!-- Main Grid Layout -->
+    <main class="cockpit-grid">
+
+      <!-- LEFT COLUMN: Mission Patrol Map & Telemetry -->
+      <section class="panel-box panel-left">
+        <div class="panel-header">
+          <span class="panel-tag">[SYS-01]</span>
+          <h2 class="panel-title">河濱巡邏雷達 // RADAR & GPS</h2>
+          <span class="panel-status-dot"></span>
+        </div>
+
+        <div class="panel-body">
+          <!-- Radar Canvas -->
+          <div class="radar-viewport-wrap">
+            <canvas id="radarCanvas" width="400" height="280"></canvas>
+            <div class="radar-overlay-cross"></div>
+            <div class="radar-coords">
+              <span>LAT: <b id="rover-lat">25.0489</b>° N</span>
+              <span>LNG: <b id="rover-lng">121.5712</b>° E</span>
+              <span>HDG: <b id="rover-heading">072</b>°</span>
+            </div>
+            <div class="rover-speed-badge">
+              <span class="speed-num" id="rover-speed">14.2</span>
+              <span class="speed-unit">KM/H</span>
+            </div>
+          </div>
+
+          <!-- River Route Selector -->
+          <div class="route-selector-box">
+            <label class="control-label">巡邏路線 // PATROL SECTOR</label>
+            <select id="route-select" class="hud-select">
+              <option value="dajia">大佳河濱公園段 (基隆河左岸)</option>
+              <option value="dadaocheng">大稻埕碼頭水岸段 (淡水河右岸)</option>
+              <option value="rainbow">彩虹河濱公園段 (內湖迎風面)</option>
+              <option value="guandu">關渡水鳥保護區段 (高灘地步道)</option>
+            </select>
+          </div>
+
+          <!-- Unit Telemetry Metrics -->
+          <div class="telemetry-grid">
+            <div class="telem-item">
+              <span class="telem-label">BATTERY (LI-ION)</span>
+              <div class="telem-val-wrap">
+                <span class="telem-val" id="telem-battery">86%</span>
+                <div class="telem-microbar"><div style="width: 86%;"></div></div>
+              </div>
+            </div>
+            <div class="telem-item">
+              <span class="telem-label">AI VISION FPS</span>
+              <div class="telem-val-wrap">
+                <span class="telem-val">59.8 FPS</span>
+                <span class="telem-sub">YOLO+GEMINI</span>
+              </div>
+            </div>
+            <div class="telem-item">
+              <span class="telem-label">LIDAR ACCURACY</span>
+              <div class="telem-val-wrap">
+                <span class="telem-val">±1.2 cm</span>
+                <span class="telem-sub">3D MESH</span>
+              </div>
+            </div>
+            <div class="telem-item">
+              <span class="telem-label">TOTAL DISTANCE</span>
+              <div class="telem-val-wrap">
+                <span class="telem-val" id="telem-dist">18.4 km</span>
+                <span class="telem-sub">SESSION</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENTER COLUMN: Rover Camera Feed & Targeting HUD -->
+      <section class="panel-box panel-center">
+        <div class="panel-header">
+          <span class="panel-tag">[VISION-02]</span>
+          <h2 class="panel-title">無人車前端即時視角 // AI TARGETING HUD</h2>
+          <div class="vision-indicator blink-red">
+            <span class="dot"></span> REC 4K // AI LOCK ENGAGED
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <!-- Camera Feed Simulation Canvas -->
+          <div class="camera-feed-viewport" id="camera-viewport">
+            <canvas id="cameraCanvas" width="640" height="360"></canvas>
+            
+            <!-- Mecha Targeting Reticle & HUD Overlay Elements -->
+            <div class="camera-hud-decorations">
+              <div class="cam-corner cam-tl"></div>
+              <div class="cam-corner cam-tr"></div>
+              <div class="cam-corner cam-bl"></div>
+              <div class="cam-corner cam-br"></div>
+
+              <div class="reticle-center-target">
+                <div class="target-bracket-left"></div>
+                <div class="target-bracket-right"></div>
+                <div class="target-center-pip"></div>
+              </div>
+
+              <!-- Top Left Pitch/Roll HUD -->
+              <div class="attitude-indicator">
+                <span>PITCH: +0.4°</span>
+                <span>ROLL: -0.1°</span>
+                <span>FOV: 118° WIDE</span>
+              </div>
+
+              <!-- Dynamic Target Info Box (Updated by JS on detection) -->
+              <div class="hud-target-lock-box" id="target-lock-box">
+                <div class="lock-header">
+                  <span class="lock-alert">TARGET LOCK</span>
+                  <span class="lock-conf" id="lock-conf">94.8%</span>
+                </div>
+                <div class="lock-title" id="lock-title">#02 找回消失的垃圾桶：滿溢警報</div>
+                <div class="lock-dept" id="lock-dept">權責局處：環保局公館/大同清潔隊</div>
+                <div class="lock-coords" id="lock-coords">COORD: 25.0512, 121.5684</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action: Manual Incident Injection Bar -->
+          <div class="incident-inject-toolbar">
+            <span class="toolbar-label">手動觸發測試事件 // INJECT FAKE BUG:</span>
+            <div class="inject-btn-group">
+              <button class="btn-inject" data-cat="trash" title="模擬偵測到垃圾桶滿溢或周遭棄置">
+                🗑️ 垃圾桶滿溢
+              </button>
+              <button class="btn-inject" data-cat="pavement" title="模擬偵測到步道破損坑洞">
+                ⚠️ 地磚破損坑洞
+              </button>
+              <button class="btn-inject" data-cat="tree" title="模擬偵測到路樹傾倒或病枯木">
+                🌳 枯木路樹倒伏
+              </button>
+              <button class="btn-inject" data-cat="hygiene" title="模擬偵測到鼠患／雜物堆積">
+                🐀 衛生死角通報
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: Incident Logs & Fake Data Generator -->
+      <section class="panel-box panel-right">
+        <div class="panel-header">
+          <span class="panel-tag">[DATA-03]</span>
+          <h2 class="panel-title">市政痛點回報串流 // DATA PIPELINE</h2>
+          <span class="badge-count" id="incident-count-badge">8 ISSUES</span>
+        </div>
+
+        <div class="panel-body">
+          
+          <!-- Generator Configuration & Controls -->
+          <div class="generator-controls-card">
+            <div class="gen-row">
+              <span class="gen-title">自動巡檢模擬 // SIMULATION</span>
+              <button id="btn-toggle-auto" class="btn-toggle-auto running">
+                <span class="toggle-led"></span>
+                <span id="auto-state-text">AUTO INGEST: ON</span>
+              </button>
+            </div>
+            
+            <div class="gen-tools-row">
+              <div class="input-inline">
+                <label>間隔 (秒):</label>
+                <input type="number" id="auto-interval" min="1" max="10" value="3" class="hud-num-input">
+              </div>
+              <button id="btn-generate-batch" class="btn-hud-action">
+                🎲 批次產 10 筆
+              </button>
+              <button id="btn-clear-data" class="btn-hud-ghost">
+                清空
+              </button>
+            </div>
+
+            <div class="export-row">
+              <button id="btn-download-json" class="btn-hud-primary">
+                💾 匯出 patrol_data.json
+              </button>
+              <button id="btn-copy-json" class="btn-hud-secondary">
+                📋 複製 JSON
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Tabs -->
+          <div class="category-filters">
+            <button class="filter-tab active" data-filter="all">全部 (<span id="count-all">0</span>)</button>
+            <button class="filter-tab" data-filter="trash">垃圾桶 (<span id="count-trash">0</span>)</button>
+            <button class="filter-tab" data-filter="pavement">步道 (<span id="count-pavement">0</span>)</button>
+            <button class="filter-tab" data-filter="tree">路樹 (<span id="count-tree">0</span>)</button>
+            <button class="filter-tab" data-filter="hygiene">衛生 (<span id="count-hygiene">0</span>)</button>
+          </div>
+
+          <!-- Incidents Scrollable List -->
+          <div class="incident-list-container" id="incident-list-container">
+            <!-- Dynamic Incident Cards rendered by app.js -->
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Cockpit Footer Telemetry Ticker -->
+    <footer class="hud-footer">
+      <div class="ticker-label">CIVIC DEBUG PROTOCOL:</div>
+      <div class="ticker-marquee">
+        <span class="ticker-content">
+          [RX-0 ENGAGED] » 台北市河濱步道 112km 無人巡檢數位化原型 » 影像識別 + GPS 坐標對齊 » 1999 自動派工系統就緒 » 符合沈伯洋政策 #1 #2 #7 痛點解方 » 敬請於 10/24 黑客松現場 DEMO 驗證 »
+        </span>
+      </div>
+      <div class="footer-meta">
+        BUILD 2026.10.13 // REINHARD-AI
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 3. MODAL: 1999 市政派工工單預覽 (DISPATCH TICKET PREVIEW)       -->
+  <!-- ============================================================== -->
+  <div class="hud-modal" id="ticket-modal">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge">1999 DISPATCH TICKET</span>
+          <h3 id="modal-incident-title">自動生成市政派工單 #2026-1024-001</h3>
+        </div>
+        <button class="modal-close-btn" id="modal-close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="ticket-grid">
+          <!-- Snapshot with detection box -->
+          <div class="ticket-visual">
+            <div class="visual-wrapper">
+              <img id="modal-snapshot-img" src="" alt="現場截圖">
+              <div class="visual-hud-tag">AI SNAPSHOT EVIDENCE</div>
+            </div>
+          </div>
+
+          <!-- Ticket Details -->
+          <div class="ticket-info">
+            <div class="ticket-row">
+              <span class="row-label">通報編號</span>
+              <span class="row-val font-mono" id="modal-ticket-id">TPE-2026-0891</span>
+            </div>
+            <div class="ticket-row">
+              <span class="row-label">事件分類</span>
+              <span class="row-val" id="modal-ticket-category">#2 找回消失的垃圾桶</span>
+            </div>
+            <div class="ticket-row">
+              <span class="row-label">嚴重等級</span>
+              <span class="row-val font-bold" id="modal-ticket-severity">HIGH (高度優先)</span>
+            </div>
+            <div class="ticket-row">
+              <span class="row-label">GPS 座標</span>
+              <span class="row-val font-mono" id="modal-ticket-coords">25.04892, 121.57124</span>
+            </div>
+            <div class="ticket-row">
+              <span class="row-label">派工局處</span>
+              <span class="row-val text-cyan" id="modal-ticket-dept">台北市政府環境保護局</span>
+            </div>
+            <div class="ticket-row">
+              <span class="row-label">建議處置</span>
+              <span class="row-val" id="modal-ticket-action">調派大同清潔隊攜帶替換內膽前往清運</span>
+            </div>
+            <div class="ticket-row">
+              <span class="row-label">100 天落地說明</span>
+              <span class="row-val text-muted" id="modal-ticket-landing">符合市府上任 100 天現有巡邏車加裝 AI 邊緣鏡頭快速布建計畫。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-hud-ghost" id="modal-cancel-btn">關閉視窗</button>
+        <button class="btn-hud-primary" id="modal-submit-mock-btn">
+          🚀 模擬傳送至台北市 1999 陳情派工系統 (API MOCK)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="hud-toast" class="hud-toast"></div>
+
+  <!-- Main JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>
