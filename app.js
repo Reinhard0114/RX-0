@@ -139,220 +139,27 @@ class MechaAudioEngine {
 const audio = new MechaAudioEngine();
 
 // ============================================================================
-// 2. FAKE DATA GENERATOR DEFINITIONS & SECTORS
+// 2. IMPORTED CIVIC INSPECTION DATABASE (FROM data.js)
 // ============================================================================
-const SECTORS = {
-  dajia: {
-    name: '大佳河濱公園段 (基隆河左岸)',
-    center: { lat: 25.0742, lng: 121.5348 },
-    deltaLat: 0.006,
-    deltaLng: 0.012
-  },
-  dadaocheng: {
-    name: '大稻埕碼頭水岸段 (淡水河右岸)',
-    center: { lat: 25.0569, lng: 121.5078 },
-    deltaLat: 0.008,
-    deltaLng: 0.005
-  },
-  rainbow: {
-    name: '彩虹河濱公園段 (內湖迎風面)',
-    center: { lat: 25.0551, lng: 121.5742 },
-    deltaLat: 0.005,
-    deltaLng: 0.015
-  },
-  guandu: {
-    name: '關渡水鳥保護區段 (高灘地步道)',
-    center: { lat: 25.1225, lng: 121.4682 },
-    deltaLat: 0.007,
-    deltaLng: 0.008
-  }
-};
-
-const INCIDENT_TEMPLATES = {
-  trash: [
-    {
-      title: '#02 找回消失的垃圾桶：容量滿溢警報',
-      category: 'trash',
-      categoryName: '#2 消失的垃圾桶',
-      severity: 'high',
-      department: '環境保護局 清潔隊',
-      suggestedAction: '派駐清運專車前往替換內膽並加強周遭違規棄置稽查',
-      color: '#ff003c',
-      svgIcon: 'trash'
-    },
-    {
-      title: '#02 行人清潔箱周遭遭非法家戶垃圾堆置',
-      category: 'trash',
-      categoryName: '#2 消失的垃圾桶',
-      severity: 'medium',
-      department: '環境保護局 環保稽查大隊',
-      suggestedAction: '通報分隊清除廢棄物並調閱路口監視器開罰',
-      color: '#ffb703',
-      svgIcon: 'trash'
-    }
-  ],
-  pavement: [
-    {
-      title: '#07 河岸步道透水地磚大面積破損與沉陷',
-      category: 'pavement',
-      categoryName: '#7 步道安全bug',
-      severity: 'high',
-      department: '工務局水利工程處 河川工程科',
-      suggestedAction: '已生成警示工單，調派維修工班於 48 小時內進行瀝青冷補或換磚',
-      color: '#ff003c',
-      svgIcon: 'pavement'
-    },
-    {
-      title: '#07 自行車道反光標線磨損暨護欄螺栓鬆脫',
-      category: 'pavement',
-      categoryName: '#7 步道安全bug',
-      severity: 'medium',
-      department: '工務局水利工程處 工務科',
-      suggestedAction: '納入每週例行五金加固與熱拌標線補繪排程',
-      color: '#ffb703',
-      svgIcon: 'pavement'
-    }
-  ],
-  tree: [
-    {
-      title: '#01 把三千棵樹種回來：苦楝老樹受強風吹襲半倒伏',
-      category: 'tree',
-      categoryName: '#1 種回三千棵樹',
-      severity: 'high',
-      department: '工務局公園路燈工程管理處 園藝工程隊',
-      suggestedAction: '判定具有傾倒壓傷行人風險，出動吊卡車進行支架扶正與修剪',
-      color: '#ff003c',
-      svgIcon: 'tree'
-    },
-    {
-      title: '#01 高灘地步道白千層樹穴缺漏與樹皮遭真菌病害',
-      category: 'tree',
-      categoryName: '#1 種回三千棵樹',
-      severity: 'medium',
-      department: '工務局公園處 青年公園管理所',
-      suggestedAction: '建檔樹木身分證 ID，安排樹醫進行塗劑治療與補植評估',
-      color: '#ffb703',
-      svgIcon: 'tree'
-    }
-  ],
-  hygiene: [
-    {
-      title: '#03 鼠患四處跑：碼頭餐飲散場周圍發現溝鼠蹤跡',
-      category: 'hygiene',
-      categoryName: '#3 鼠患衛生治理',
-      severity: 'high',
-      department: '衛生局 疾病管制科 / 環保局',
-      suggestedAction: '繪製鼠患傳播熱點圖，安排下水道熱煙霧消毒並督導攤商油脂截留',
-      color: '#ff003c',
-      svgIcon: 'rat'
-    },
-    {
-      title: '#03 草叢死角大型廢棄物遭棄置滋生孑孓病媒',
-      category: 'hygiene',
-      categoryName: '#3 鼠患衛生治理',
-      severity: 'medium',
-      department: '環境保護局 病媒防治隊',
-      suggestedAction: '清理積水容器並噴灑粒劑投藥防治登革熱',
-      color: '#ffb703',
-      svgIcon: 'rat'
-    }
-  ]
-};
-
-// Procedural snapshot SVG generator
-function generateSnapshotSvg(type, title, coords) {
-  let themeColor = '#ff003c';
-  let badgeText = 'OBJECT DETECTED';
-  let iconSvg = '';
-
-  if (type === 'trash') {
-    themeColor = '#ff003c';
-    badgeText = 'TRASH OVERFLOW 94%';
-    iconSvg = `
-      <rect x="130" y="70" width="60" height="70" rx="4" fill="#333" stroke="${themeColor}" stroke-width="2"/>
-      <rect x="120" y="60" width="80" height="8" rx="2" fill="${themeColor}"/>
-      <circle cx="150" cy="50" r="12" fill="#ff7043" opacity="0.8"/>
-      <circle cx="170" cy="54" r="10" fill="#fff" opacity="0.6"/>
-    `;
-  } else if (type === 'pavement') {
-    themeColor = '#ff9100';
-    badgeText = 'PAVEMENT CRACK 91%';
-    iconSvg = `
-      <path d="M110,80 L140,110 L160,95 L190,130" stroke="${themeColor}" stroke-width="4" fill="none" stroke-linecap="round"/>
-      <polygon points="135,100 150,90 145,115" fill="${themeColor}" opacity="0.8"/>
-    `;
-  } else if (type === 'tree') {
-    themeColor = '#00e676';
-    badgeText = 'TREE HAZARD 89%';
-    iconSvg = `
-      <rect x="155" y="80" width="10" height="60" fill="#8d6e63"/>
-      <path d="M160,30 L130,80 L190,80 Z" fill="${themeColor}" opacity="0.8"/>
-      <line x1="160" y1="50" x2="135" y2="70" stroke="#d50000" stroke-width="3"/>
-    `;
-  } else {
-    themeColor = '#e040fb';
-    badgeText = 'RODENT SIGNS 88%';
-    iconSvg = `
-      <ellipse cx="160" cy="100" rx="28" ry="16" fill="#616161"/>
-      <circle cx="185" cy="95" r="4" fill="${themeColor}"/>
-      <path d="M132,100 Q110,90 100,105" stroke="#757575" stroke-width="3" fill="none"/>
-    `;
-  }
-
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
-      <defs>
-        <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="#0a0e17"/>
-          <stop offset="100%" stop-color="#141a24"/>
-        </linearGradient>
-      </defs>
-      <rect width="320" height="200" fill="url(#bg)"/>
-      <line x1="0" y1="140" x2="320" y2="140" stroke="#1f293d" stroke-width="2"/>
-      
-      <!-- Simulated River Path -->
-      <polygon points="40,200 140,140 180,140 280,200" fill="#1a202c"/>
-      <line x1="160" y1="140" x2="160" y2="200" stroke="#374151" stroke-dasharray="8,8" stroke-width="2"/>
-
-      <!-- Subject Target -->
-      ${iconSvg}
-
-      <!-- AI Bounding Box -->
-      <rect x="95" y="35" width="130" height="120" fill="none" stroke="${themeColor}" stroke-width="2" stroke-dasharray="6,4"/>
-      <rect x="95" y="20" width="130" height="15" fill="${themeColor}"/>
-      <text x="100" y="31" fill="#000" font-family="monospace" font-size="9" font-weight="bold">${badgeText}</text>
-
-      <!-- HUD Telemetry Watermark -->
-      <text x="10" y="185" fill="#6b7280" font-family="monospace" font-size="8">CAM: RX0-FRONT-4K</text>
-      <text x="10" y="195" fill="#6b7280" font-family="monospace" font-size="8">GPS: ${coords.lat}, ${coords.lng}</text>
-      <circle cx="300" cy="20" r="5" fill="#ff1744"/>
-    </svg>
-  `;
-
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-}
+const SECTORS = window.RX0_DATA ? window.RX0_DATA.SECTORS : {};
+const INCIDENT_TEMPLATES = window.RX0_DATA ? window.RX0_DATA.INCIDENT_TEMPLATES : {};
+const PRESET_INSPECTIONS = window.RX0_DATA ? window.RX0_DATA.PRESET_INSPECTIONS : [];
+const generateSnapshotSvg = window.RX0_DATA ? window.RX0_DATA.generateSnapshotSvg : () => '';
 
 // ============================================================================
 // 3. MAIN APPLICATION CONTROLLER
 // ============================================================================
 class TaipeiDebuggerApp {
   constructor() {
-    this.currentSectorKey = 'dajia';
-    this.currentSector = SECTORS.dajia;
-    this.rover = {
-      lat: this.currentSector.center.lat,
-      lng: this.currentSector.center.lng,
-      speed: 14.2,
-      heading: 72,
-      progress: 0,
-      battery: 86
-    };
-
-    this.incidents = [];
-    this.autoIngest = true;
-    this.autoIntervalSec = 3;
-    this.autoTimer = null;
+    this.currentDate = '2026-10-14';
+    this.currentSectorKey = 'dadaocheng';
+    this.currentSector = SECTORS.dadaocheng;
     this.currentFilter = 'all';
+
+    // Active incidents based on date & sector
+    this.activeIncidents = [];
+    this.selectedIncident = null;
+    this.hoveredPinIndex = -1;
 
     // Canvas contexts
     this.radarCanvas = document.getElementById('radarCanvas');
@@ -370,6 +177,10 @@ class TaipeiDebuggerApp {
     this.isNtdIgnited = false;
     this.countdownTimer = null;
 
+    // View Navigation (tactical | analytics)
+    this.currentView = 'tactical';
+    this.echartsInstances = {};
+
     this.init();
   }
 
@@ -379,12 +190,11 @@ class TaipeiDebuggerApp {
     }
     this.bindEvents();
     this.initBootScreen();
-    this.seedInitialData();
+    this.applyFilterAndRefresh();
     this.startRadarLoop();
     this.startCameraSimulationLoop();
     this.startFlameAnimationLoop();
     this.startClock();
-    this.restartAutoIngest();
   }
 
   // Bind all interactive controls
@@ -406,6 +216,43 @@ class TaipeiDebuggerApp {
       });
     }
 
+    // View Switcher (Tactical vs Municipal Analytics War Room)
+    document.querySelectorAll('.hud-view-tab').forEach((tab) => {
+      tab.addEventListener('click', (e) => {
+        audio.init();
+        audio.playClick();
+        const targetView = e.currentTarget.dataset.view;
+        this.switchView(targetView);
+      });
+    });
+
+    // Date fast switcher
+    const dateSelect = document.getElementById('mission-date-select');
+    if (dateSelect) {
+      dateSelect.addEventListener('change', (e) => {
+        audio.playClick();
+        this.currentDate = e.target.value;
+        this.applyFilterAndRefresh();
+        const summaryText = this.currentDate === 'range-7d'
+          ? '近 7 日歷史彙整成果'
+          : `${this.currentDate} 巡邏分析成果`;
+        document.getElementById('loaded-summary').textContent = summaryText;
+        this.showToast(`📅 已載入：${summaryText}`);
+      });
+    }
+
+    // Sector Selection
+    const routeSelect = document.getElementById('route-select');
+    if (routeSelect) {
+      routeSelect.addEventListener('change', (e) => {
+        audio.playClick();
+        this.currentSectorKey = e.target.value;
+        this.currentSector = SECTORS[e.target.value] || SECTORS.dadaocheng;
+        this.applyFilterAndRefresh();
+        this.showToast(`巡邏河段已切換至：${this.currentSector.name}`);
+      });
+    }
+
     // BGM Controls
     const btnToggleBgm = document.getElementById('btn-toggle-bgm');
     if (btnToggleBgm) {
@@ -424,105 +271,52 @@ class TaipeiDebuggerApp {
       });
     }
 
-    const btnSoundToggle = document.getElementById('btn-toggle-sound');
-    if (btnSoundToggle) {
-      btnSoundToggle.addEventListener('click', () => {
-        audio.init();
-        const on = audio.toggle();
-        document.getElementById('sound-icon').textContent = on ? '🔊' : '🔇';
-        document.getElementById('sound-text').textContent = on ? 'SOUND FX: ON' : 'SOUND FX: OFF';
-      });
-    }
-
     const btnAudioControl = document.getElementById('btn-audio-control');
     if (btnAudioControl) {
       btnAudioControl.addEventListener('click', () => {
         audio.init();
         const on = audio.toggle();
-        btnAudioControl.textContent = on ? '🔊 AUDIO ON' : '🔇 AUDIO OFF';
-        this.showToast(on ? 'NT-D 戰術音效已開啟' : '音效已靜音');
+        const sfxIcon = document.getElementById('sfx-icon');
+        if (sfxIcon) {
+          sfxIcon.textContent = on ? '🔊' : '🔇';
+        } else {
+          btnAudioControl.textContent = on ? '🔊 AUDIO ON' : '🔇 AUDIO OFF';
+        }
+        btnAudioControl.title = on ? '戰術音效：開啟中 (點擊靜音)' : '戰術音效：已靜音 (點擊開啟)';
+        this.showToast(on ? '🔊 NT-D 戰術音效已開啟' : '🔇 戰術音效已靜音');
       });
     }
 
-    // Re-trigger NT-D Intro
-    const btnReboot = document.getElementById('btn-reboot-ntd');
-    if (btnReboot) {
-      btnReboot.addEventListener('click', () => {
+    // Brand Logo as Home Button (Re-trigger NT-D Intro)
+    const btnBrandHome = document.getElementById('btn-brand-home') || document.getElementById('btn-reboot-ntd');
+    if (btnBrandHome) {
+      btnBrandHome.addEventListener('click', () => {
         audio.init();
         audio.playNtdEngage();
         this.triggerBootScreen();
       });
     }
 
-    // Sector Selection
-    const routeSelect = document.getElementById('route-select');
-    if (routeSelect) {
-      routeSelect.addEventListener('change', (e) => {
-        audio.playClick();
-        this.changeSector(e.target.value);
-      });
-    }
-
-    // Manual Injection Buttons
+    // Manual Injection Buttons (Add test bug to active set)
     document.querySelectorAll('.btn-inject').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         audio.init();
         audio.playLockOn();
         const cat = e.currentTarget.dataset.cat;
-        this.injectIncident(cat);
+        this.injectCustomIncident(cat);
       });
     });
 
-    // Auto Ingest Toggle
-    const btnToggleAuto = document.getElementById('btn-toggle-auto');
-    if (btnToggleAuto) {
-      btnToggleAuto.addEventListener('click', () => {
-        audio.playClick();
-        this.autoIngest = !this.autoIngest;
-        btnToggleAuto.classList.toggle('running', this.autoIngest);
-        document.getElementById('auto-state-text').textContent = this.autoIngest
-          ? 'AUTO INGEST: ON'
-          : 'AUTO INGEST: OFF';
-        this.restartAutoIngest();
-      });
-    }
-
-    // Auto Interval input
-    const autoIntervalInput = document.getElementById('auto-interval');
-    if (autoIntervalInput) {
-      autoIntervalInput.addEventListener('change', (e) => {
-        const val = parseInt(e.target.value, 10);
-        if (val >= 1 && val <= 30) {
-          this.autoIntervalSec = val;
-          this.restartAutoIngest();
-        }
-      });
-    }
-
-    // Batch Generate
-    const btnBatch = document.getElementById('btn-generate-batch');
-    if (btnBatch) {
-      btnBatch.addEventListener('click', () => {
-        audio.init();
-        audio.playLockOn();
-        for (let i = 0; i < 10; i++) {
-          const cats = ['trash', 'pavement', 'tree', 'hygiene'];
-          const randomCat = cats[Math.floor(Math.random() * cats.length)];
-          this.injectIncident(randomCat, true);
-        }
-        this.renderIncidentList();
-        this.showToast('⚡ 成功批次生成 10 筆河濱巡檢資料');
-      });
-    }
-
-    // Clear Data
+    // Clear / Reset Data
     const btnClear = document.getElementById('btn-clear-data');
     if (btnClear) {
       btnClear.addEventListener('click', () => {
         audio.playClick();
-        this.incidents = [];
+        this.activeIncidents = [];
+        this.selectedIncident = null;
+        this.renderStatsAndMetrics();
         this.renderIncidentList();
-        this.showToast('已清空所有暫存事件');
+        this.showToast('已清空當前視圖資料');
       });
     }
 
@@ -572,30 +366,321 @@ class TaipeiDebuggerApp {
     if (btnModalSubmit) {
       btnModalSubmit.addEventListener('click', () => {
         audio.playDispatchSuccess();
+        if (this.selectedIncident) {
+          this.selectedIncident.status = 'dispatched';
+          this.renderStatsAndMetrics();
+          this.renderIncidentList();
+        }
         this.showToast('✅ 工單已成功推播至台北市 1999 派工 API [HTTP 200 OK]');
         this.closeModal();
       });
+    }
+
+    // Radar Canvas Mouse Interactions for Pins
+    if (this.radarCanvas) {
+      this.radarCanvas.addEventListener('mousemove', (e) => {
+        this.handleRadarMouseMove(e);
+      });
+      this.radarCanvas.addEventListener('mouseleave', () => {
+        this.hoveredPinIndex = -1;
+        const popover = document.getElementById('map-pin-popover');
+        if (popover) popover.classList.add('hidden');
+      });
+      this.radarCanvas.addEventListener('click', (e) => {
+        this.handleRadarClick(e);
+      });
+    }
+  }
+
+  // Calculate & Refresh Data based on Date & Sector Filter
+  applyFilterAndRefresh() {
+    if (this.currentDate === 'range-7d') {
+      // 7-day range: include matching sector across all dates
+      this.activeIncidents = PRESET_INSPECTIONS.filter((item) => {
+        return item.sectorKey === this.currentSectorKey;
+      });
+    } else {
+      // Single date + sector
+      this.activeIncidents = PRESET_INSPECTIONS.filter((item) => {
+        return item.date === this.currentDate && item.sectorKey === this.currentSectorKey;
+      });
+    }
+
+    // If no incidents in this specific slice, provide fallback default
+    if (this.activeIncidents.length === 0) {
+      const fallback = PRESET_INSPECTIONS.filter((i) => i.sectorKey === this.currentSectorKey);
+      this.activeIncidents = fallback.length > 0 ? fallback : [PRESET_INSPECTIONS[0]];
+    }
+
+    // Default select first item
+    this.selectedIncident = this.activeIncidents[0] || null;
+
+    this.renderStatsAndMetrics();
+    this.renderIncidentList();
+    if (this.selectedIncident) {
+      this.updateTargetLockBox(this.selectedIncident);
+    }
+
+    // Live update Municipal Analytics ECharts & KPIs with active date/sector filters
+    this.updateMunicipalAnalyticsData();
+  }
+
+  // Render KPI Cards, Progress Bar, and Left Telemetry
+  renderStatsAndMetrics() {
+    const list = this.activeIncidents;
+
+    // Count by category
+    const countTrash = list.filter((i) => i.category === 'trash').length;
+    const countPavement = list.filter((i) => i.category === 'pavement').length;
+    const countTree = list.filter((i) => i.category === 'tree').length;
+    const countHygiene = list.filter((i) => i.category === 'hygiene').length;
+
+    document.getElementById('stat-trash').textContent = countTrash;
+    document.getElementById('stat-pavement').textContent = countPavement;
+    document.getElementById('stat-tree').textContent = countTree;
+    document.getElementById('stat-hygiene').textContent = countHygiene;
+
+    // Dispatch SLA Progress
+    const dispatchedCount = list.filter((i) => i.status === 'dispatched').length;
+    const rate = list.length > 0 ? Math.round((dispatchedCount / list.length) * 100) : 100;
+    const fillEl = document.getElementById('dispatch-prog-fill');
+    const rateEl = document.getElementById('dispatch-prog-rate');
+    if (fillEl) fillEl.style.width = `${rate}%`;
+    if (rateEl) rateEl.textContent = `${rate}% 派發 (${dispatchedCount}/${list.length})`;
+
+    // Left Telemetry Box
+    const sectorDistances = {
+      dajia: '4.2 km',
+      dadaocheng: '3.8 km',
+      rainbow: '5.1 km',
+      guandu: '6.5 km'
+    };
+    const sectorFrames = {
+      dajia: '3,780 F',
+      dadaocheng: '3,420 F',
+      rainbow: '4,590 F',
+      guandu: '5,850 F'
+    };
+    document.getElementById('telem-dist').textContent = sectorDistances[this.currentSectorKey] || '4.0 km';
+    document.getElementById('telem-frames').textContent = sectorFrames[this.currentSectorKey] || '3,600 F';
+    document.getElementById('telem-anomalies').textContent = `${list.length} 處`;
+    document.getElementById('telem-conf').textContent = '94.2%';
+    document.getElementById('map-pin-count').textContent = `${list.length} HOTSPOTS`;
+
+    const sectorTag = document.getElementById('rover-sector-tag');
+    if (sectorTag) sectorTag.textContent = this.currentSector.name.split(' (')[0];
+  }
+
+  // Select an Incident to view in Evidence HUD
+  selectIncident(incident) {
+    this.selectedIncident = incident;
+    this.updateTargetLockBox(incident);
+    this.renderIncidentList();
+  }
+
+  // Update Center Camera Targeting HUD Box
+  updateTargetLockBox(incident) {
+    const conf = document.getElementById('lock-conf');
+    const title = document.getElementById('lock-title');
+    const dept = document.getElementById('lock-dept');
+    const coords = document.getElementById('lock-coords');
+    const timeEl = document.getElementById('ev-timestamp');
+    const frameEl = document.getElementById('ev-frameid');
+
+    if (conf) conf.textContent = incident.confidence || '94.8%';
+    if (title) title.textContent = incident.title;
+    if (dept) dept.textContent = `權責局處：${incident.department}`;
+    if (coords) coords.textContent = `COORD: ${incident.coordinates.lat}°N, ${incident.coordinates.lng}°E (${incident.sectorName || ''} ${incident.mileage || ''})`;
+    if (timeEl) timeEl.textContent = `RECORDED: ${incident.time || '11:24:18'}`;
+    if (frameEl) frameEl.textContent = `FRAME: ${incident.frameId || '#01842'}`;
+  }
+
+  // Inject Custom Test Incident
+  injectCustomIncident(categoryKey) {
+    const templates = INCIDENT_TEMPLATES[categoryKey] || INCIDENT_TEMPLATES.trash;
+    const template = templates[Math.floor(Math.random() * templates.length)];
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0];
+    const ticketId = `TPE-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const latOffset = (Math.random() - 0.5) * this.currentSector.deltaLat;
+    const lngOffset = (Math.random() - 0.5) * this.currentSector.deltaLng;
+    const coords = {
+      lat: parseFloat((this.currentSector.center.lat + latOffset).toFixed(5)),
+      lng: parseFloat((this.currentSector.center.lng + lngOffset).toFixed(5))
+    };
+
+    const newIncident = {
+      id: ticketId,
+      date: this.currentDate === 'range-7d' ? '2026-10-14' : this.currentDate,
+      time: timeStr,
+      sectorKey: this.currentSectorKey,
+      sectorName: this.currentSector.name,
+      category: categoryKey,
+      categoryName: template.categoryName,
+      title: template.title,
+      severity: template.severity,
+      department: template.department,
+      suggestedAction: template.suggestedAction,
+      coordinates: coords,
+      mileage: `${Math.floor(Math.random() * 3)}K+${Math.floor(100 + Math.random() * 800)}`,
+      confidence: (89 + Math.random() * 9).toFixed(1) + '%',
+      frameId: `#0${Math.floor(1000 + Math.random() * 3000)}`,
+      routeT: Math.min(0.92, Math.max(0.08, Math.random())),
+      status: 'pending'
+    };
+
+    this.activeIncidents.unshift(newIncident);
+    this.selectIncident(newIncident);
+    this.renderStatsAndMetrics();
+    this.showToast(`🚨 新增測試案例：${newIncident.title.substring(0, 22)}...`);
+  }
+
+  // Render Incident Cards
+  renderIncidentList() {
+    const container = document.getElementById('incident-list-container');
+    const badge = document.getElementById('incident-count-badge');
+    if (!container) return;
+
+    // Filter incidents
+    const filtered = this.activeIncidents.filter((item) => {
+      if (this.currentFilter === 'all') return true;
+      return item.category === this.currentFilter;
+    });
+
+    if (badge) {
+      badge.textContent = `${filtered.length} ISSUES`;
+    }
+
+    // Update Filter Tab Counters
+    document.getElementById('count-all').textContent = this.activeIncidents.length;
+    ['trash', 'pavement', 'tree', 'hygiene'].forEach((cat) => {
+      const el = document.getElementById(`count-${cat}`);
+      if (el) {
+        el.textContent = this.activeIncidents.filter((i) => i.category === cat).length;
+      }
+    });
+
+    container.innerHTML = '';
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-family: var(--font-mono);">
+          [目前篩選條件下無紀錄事件]
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach((item) => {
+      const card = document.createElement('div');
+      const isSelected = this.selectedIncident && this.selectedIncident.id === item.id;
+      card.className = `incident-card ${isSelected ? 'selected' : ''}`;
+      const sevClass = item.severity === 'high' ? 'sev-high' : 'sev-medium';
+
+      card.innerHTML = `
+        <div class="card-top">
+          <span class="card-time">${item.time} · ${item.id}</span>
+          <span class="card-badge-severity ${sevClass}">${item.severity.toUpperCase()}</span>
+        </div>
+        <div class="card-title">${item.title}</div>
+        <div class="card-meta">
+          <span class="card-dept">${item.department}</span>
+          <span>${item.mileage || ''} (置信度 ${item.confidence})</span>
+        </div>
+        <div class="card-action-bar">
+          <span class="card-tag-status ${item.status === 'dispatched' ? 'status-ok' : 'status-pending'}">
+            ${item.status === 'dispatched' ? '✔ 1999 已派發' : '⏳ 待審核派工'}
+          </span>
+          <span class="card-btn-ticket">檢視派工單 ➔</span>
+        </div>
+      `;
+
+      card.addEventListener('click', () => {
+        audio.playClick();
+        this.selectIncident(item);
+        this.openModal(item);
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  // Handle Radar Canvas Mouse Hover
+  handleRadarMouseMove(e) {
+    if (!this.radarCanvas || this.activeIncidents.length === 0) return;
+    const rect = this.radarCanvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (this.radarCanvas.width / rect.width);
+    const my = (e.clientY - rect.top) * (this.radarCanvas.height / rect.height);
+
+    const w = this.radarCanvas.width;
+    const h = this.radarCanvas.height;
+
+    const p0 = { x: 0, y: h * 0.7 - 20 };
+    const p1 = { x: w * 0.35, y: h * 0.8 - 20 };
+    const p2 = { x: w * 0.65, y: h * 0.2 - 20 };
+    const p3 = { x: w, y: h * 0.3 - 20 };
+
+    const cx = 3 * (p1.x - p0.x);
+    const bx = 3 * (p2.x - p1.x) - cx;
+    const ax = p3.x - p0.x - cx - bx;
+
+    const cy = 3 * (p1.y - p0.y);
+    const by = 3 * (p2.y - p1.y) - cy;
+    const ay = p3.y - p0.y - cy - by;
+
+    let foundIdx = -1;
+    this.activeIncidents.forEach((item, idx) => {
+      const t = item.routeT || ((idx * 0.18 + 0.1) % 0.9);
+      const px = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0.x;
+      const py = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
+
+      const dist = Math.hypot(mx - px, my - py);
+      if (dist < 14) {
+        foundIdx = idx;
+      }
+    });
+
+    this.hoveredPinIndex = foundIdx;
+    const popover = document.getElementById('map-pin-popover');
+    if (foundIdx >= 0) {
+      this.radarCanvas.style.cursor = 'pointer';
+      const item = this.activeIncidents[foundIdx];
+      if (popover) {
+        popover.classList.remove('hidden');
+        document.getElementById('pop-title').textContent = item.title;
+        document.getElementById('pop-meta').textContent = `${item.categoryName} · ${item.mileage} · 置信度 ${item.confidence}`;
+      }
+    } else {
+      this.radarCanvas.style.cursor = 'default';
+      if (popover) popover.classList.add('hidden');
+    }
+  }
+
+  // Handle Radar Canvas Click
+  handleRadarClick() {
+    if (this.hoveredPinIndex >= 0 && this.activeIncidents[this.hoveredPinIndex]) {
+      audio.init();
+      audio.playLockOn();
+      const item = this.activeIncidents[this.hoveredPinIndex];
+      this.selectIncident(item);
+      this.showToast(`🎯 已鎖定路線異常點：${item.title.substring(0, 20)}...`);
     }
   }
 
   // NT-D Boot Screen Lifecycle
   initBootScreen() {
-    // Keep user in boot screen until they click to activate!
-    // No automatic 5-second transition.
     this.isNtdIgnited = false;
   }
 
-  // Ignite NT-D Destroy Mode Sequence (10 Seconds with Purple Flame & Music)
   igniteNtdSequence() {
     if (this.isNtdIgnited) return;
     this.isNtdIgnited = true;
 
-    // 1. Audio activation
     audio.init();
     audio.playNtdEngage();
     this.playBgm();
 
-    // 2. Visual ignition & screen shake
     const bootScreen = document.getElementById('ntd-boot-screen');
     if (bootScreen) {
       bootScreen.classList.add('ntd-ignited', 'screen-shake');
@@ -606,22 +691,8 @@ class TaipeiDebuggerApp {
       engageBtnText.textContent = '🚨 DESTROY MODE ENGAGED // 系統超頻共振中 🚨';
     }
 
-    const footStatus = document.getElementById('monitor-foot-status');
-    if (footStatus) {
-      footStatus.textContent = 'PSYCHO-FRAME OVERDRIVE: 120% ACTIVE';
-    }
-
-    const promptText = document.getElementById('boot-prompt-text');
-    if (promptText) {
-      promptText.textContent = '⚡ 精神感應骨架超頻啟動中！10 秒後無縫接入駕駛艙 ⚡';
-    }
-
-    this.showToast('🔥 NT-D 毀滅模式啟動！《UNICORN》BGM 播放中 (10 秒後接入駕駛艙)...');
-
-    // 3. 10-Second Countdown Timer
     const durationMs = 10000;
     const startTime = Date.now();
-
     const countdownDigits = document.getElementById('countdown-digits');
     const countdownFill = document.getElementById('countdown-fill');
     const countdownSubLogs = document.getElementById('countdown-sub-logs');
@@ -632,33 +703,25 @@ class TaipeiDebuggerApp {
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, (durationMs - elapsed) / 1000);
 
-      if (countdownDigits) {
-        countdownDigits.textContent = remaining.toFixed(1) + 's';
-      }
-      if (countdownFill) {
-        countdownFill.style.width = Math.min(100, (elapsed / durationMs) * 100) + '%';
-      }
+      if (countdownDigits) countdownDigits.textContent = remaining.toFixed(1) + 's';
+      if (countdownFill) countdownFill.style.width = Math.min(100, (elapsed / durationMs) * 100) + '%';
 
       if (countdownSubLogs) {
         if (remaining > 8) {
-          countdownSubLogs.textContent = '> BIO-SENSOR PSYCHO-FRAME RESONANCE REACHING 120% CRITICAL...';
-        } else if (remaining > 6) {
-          countdownSubLogs.textContent = '> OVERRIDING RESTRICTION CODES // PURPLE HARMONIC MATRIX LOCKED...';
-        } else if (remaining > 4) {
-          countdownSubLogs.textContent = '> 112KM TAIPEI WATERFRONT GPS SATELLITE NETWORK SYNCHRONIZED...';
+          countdownSubLogs.textContent = '> PSYCHO-FRAME BIO-SENSOR RESONATING AT 120% CRITICAL...';
+        } else if (remaining > 5) {
+          countdownSubLogs.textContent = '> LOADING HISTORICAL PATROL DATA & MUNICIPAL DATASETS...';
         } else if (remaining > 2) {
-          countdownSubLogs.textContent = '> AI VISION PIPELINE CHARGING // READY TO DETECT MUNICIPAL BUGS...';
+          countdownSubLogs.textContent = '> WATERFRONT INCIDENT PIPELINE READY FOR 1999 DISPATCH...';
         } else {
-          countdownSubLogs.textContent = '> TRANSITIONING TO RX-0 COCKPIT HUD // 3... 2... 1...';
+          countdownSubLogs.textContent = '> ENGAGING RX-0 WAR ROOM HUD // 3... 2... 1...';
         }
       }
 
       if (elapsed >= durationMs) {
         clearInterval(this.countdownTimer);
         this.countdownTimer = null;
-        if (bootScreen) {
-          bootScreen.classList.remove('screen-shake');
-        }
+        if (bootScreen) bootScreen.classList.remove('screen-shake');
         this.dismissBootScreen();
       }
     }, 50);
@@ -666,13 +729,8 @@ class TaipeiDebuggerApp {
 
   dismissBootScreen() {
     const bootScreen = document.getElementById('ntd-boot-screen');
-    if (bootScreen) {
-      bootScreen.classList.add('fade-out');
-    }
-    // Ensure BGM continues in the main cockpit HUD
-    if (!this.bgmPlaying) {
-      this.playBgm();
-    }
+    if (bootScreen) bootScreen.classList.add('fade-out');
+    if (!this.bgmPlaying) this.playBgm();
   }
 
   triggerBootScreen() {
@@ -686,52 +744,21 @@ class TaipeiDebuggerApp {
       this.countdownTimer = null;
     }
     const engageBtnText = document.getElementById('engage-btn-text');
-    if (engageBtnText) {
-      engageBtnText.textContent = 'ACTIVATE NT-D SYSTEM // 啟動毀滅模式';
-    }
+    if (engageBtnText) engageBtnText.textContent = 'ACTIVATE NT-D SYSTEM // 啟動毀滅模式';
     const countdownFill = document.getElementById('countdown-fill');
-    if (countdownFill) {
-      countdownFill.style.width = '0%';
-    }
+    if (countdownFill) countdownFill.style.width = '0%';
     const countdownDigits = document.getElementById('countdown-digits');
-    if (countdownDigits) {
-      countdownDigits.textContent = '10.0s';
-    }
-    const footStatus = document.getElementById('monitor-foot-status');
-    if (footStatus) {
-      footStatus.textContent = 'STANDBY FOR ENGAGEMENT';
-    }
-    const promptText = document.getElementById('boot-prompt-text');
-    if (promptText) {
-      promptText.textContent = '🔥 點擊按鈕啟動 NT-D 紫色火焰特效與《UNICORN》BGM，10 秒後進入駕駛艙 🔥';
-    }
+    if (countdownDigits) countdownDigits.textContent = '10.0s';
   }
 
-  changeSector(sectorKey) {
-    if (SECTORS[sectorKey]) {
-      this.currentSectorKey = sectorKey;
-      this.currentSector = SECTORS[sectorKey];
-      this.rover.lat = this.currentSector.center.lat;
-      this.rover.lng = this.currentSector.center.lng;
-      this.rover.progress = 0;
-      this.showToast(`巡邏扇區已切換至：${this.currentSector.name}`);
-    }
-  }
-
-  // Start Background Clock & Rover Telemetry Jitter
+  // Start Background Clock
   startClock() {
     setInterval(() => {
       const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
       const timeStr = now.toTimeString().split(' ')[0];
       const clockEl = document.getElementById('live-clock');
-      if (clockEl) clockEl.textContent = timeStr;
-
-      // Small jitter for realism
-      const speedEl = document.getElementById('rover-speed');
-      if (speedEl) {
-        const jitter = (Math.random() * 0.8 - 0.4).toFixed(1);
-        speedEl.textContent = (14.2 + parseFloat(jitter)).toFixed(1);
-      }
+      if (clockEl) clockEl.textContent = `${dateStr} ${timeStr}`;
 
       const resMeter = document.getElementById('resonance-meter-bar');
       const resVal = document.getElementById('resonance-val');
@@ -743,183 +770,6 @@ class TaipeiDebuggerApp {
     }, 1000);
   }
 
-  // Initial Seed Data
-  seedInitialData() {
-    const initialItems = [
-      {
-        cat: 'trash',
-        title: '#02 找回消失的垃圾桶：彩虹橋畔垃圾箱容量滿溢',
-        lat: 25.0512,
-        lng: 121.5784,
-        sev: 'high'
-      },
-      {
-        cat: 'pavement',
-        title: '#07 河岸自行車道 14.5K 鋪面碎石及沉陷坑洞',
-        lat: 25.0538,
-        lng: 121.5762,
-        sev: 'high'
-      },
-      {
-        cat: 'tree',
-        title: '#01 把三千棵樹種回來：苦楝老樹受強風吹襲半倒伏',
-        lat: 25.0565,
-        lng: 121.5721,
-        sev: 'medium'
-      },
-      {
-        cat: 'hygiene',
-        title: '#03 鼠患四處跑：夜市與水岸交界處發現溝鼠活動熱點',
-        lat: 25.0579,
-        lng: 121.5694,
-        sev: 'high'
-      }
-    ];
-
-    initialItems.forEach((item) => {
-      this.injectIncident(item.cat, true, item);
-    });
-
-    this.renderIncidentList();
-  }
-
-  // Inject a single fake data incident
-  injectIncident(categoryKey, silent = false, override = null) {
-    const templates = INCIDENT_TEMPLATES[categoryKey] || INCIDENT_TEMPLATES.trash;
-    const template = templates[Math.floor(Math.random() * templates.length)];
-
-    const now = new Date();
-    const timeStr = now.toTimeString().split(' ')[0];
-    const ticketId = `TPE-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const latOffset = (Math.random() - 0.5) * this.currentSector.deltaLat;
-    const lngOffset = (Math.random() - 0.5) * this.currentSector.deltaLng;
-
-    const coords = {
-      lat: override ? override.lat : parseFloat((this.rover.lat + latOffset).toFixed(5)),
-      lng: override ? override.lng : parseFloat((this.rover.lng + lngOffset).toFixed(5))
-    };
-
-    const incident = {
-      id: ticketId,
-      timestamp: timeStr,
-      dateTime: now.toISOString(),
-      sector: this.currentSector.name,
-      category: categoryKey,
-      categoryName: template.categoryName,
-      title: override ? override.title : template.title,
-      severity: override ? override.sev : template.severity,
-      department: template.department,
-      suggestedAction: template.suggestedAction,
-      coordinates: coords,
-      confidence: (88 + Math.random() * 11).toFixed(1) + '%',
-      snapshotUrl: generateSnapshotSvg(categoryKey, template.title, coords)
-    };
-
-    this.incidents.unshift(incident);
-
-    // Update target lock UI in camera feed
-    this.updateTargetLockBox(incident);
-
-    if (!silent) {
-      this.renderIncidentList();
-      this.showToast(`🚨 新增市政異常：${incident.title.substring(0, 20)}...`);
-    }
-
-    return incident;
-  }
-
-  // Update Center Camera Targeting HUD Box
-  updateTargetLockBox(incident) {
-    const box = document.getElementById('target-lock-box');
-    const conf = document.getElementById('lock-conf');
-    const title = document.getElementById('lock-title');
-    const dept = document.getElementById('lock-dept');
-    const coords = document.getElementById('lock-coords');
-
-    if (box && conf && title && dept && coords) {
-      conf.textContent = incident.confidence;
-      title.textContent = incident.title;
-      dept.textContent = `權責局處：${incident.department}`;
-      coords.textContent = `COORD: ${incident.coordinates.lat}°N, ${incident.coordinates.lng}°E`;
-    }
-  }
-
-  // Render Incident Cards
-  renderIncidentList() {
-    const container = document.getElementById('incident-list-container');
-    const badge = document.getElementById('incident-count-badge');
-    if (!container) return;
-
-    // Filter incidents
-    const filtered = this.incidents.filter((item) => {
-      if (this.currentFilter === 'all') return true;
-      return item.category === this.currentFilter;
-    });
-
-    if (badge) {
-      badge.textContent = `${filtered.length} ISSUES`;
-    }
-
-    // Update Filter Tab Counters
-    document.getElementById('count-all').textContent = this.incidents.length;
-    ['trash', 'pavement', 'tree', 'hygiene'].forEach((cat) => {
-      const el = document.getElementById(`count-${cat}`);
-      if (el) {
-        el.textContent = this.incidents.filter((i) => i.category === cat).length;
-      }
-    });
-
-    container.innerHTML = '';
-
-    if (filtered.length === 0) {
-      container.innerHTML = `
-        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-family: var(--font-mono);">
-          [NO ISSUES RECORDED IN CURRENT FILTER]
-        </div>
-      `;
-      return;
-    }
-
-    filtered.forEach((item) => {
-      const card = document.createElement('div');
-      card.className = 'incident-card';
-      const sevClass = item.severity === 'high' ? 'sev-high' : 'sev-medium';
-
-      card.innerHTML = `
-        <div class="card-top">
-          <span class="card-time">${item.timestamp} · ${item.id}</span>
-          <span class="card-badge-severity ${sevClass}">${item.severity.toUpperCase()}</span>
-        </div>
-        <div class="card-title">${item.title}</div>
-        <div class="card-meta">
-          <span class="card-dept">${item.department}</span>
-          <span>${item.coordinates.lat}, ${item.coordinates.lng}</span>
-        </div>
-      `;
-
-      card.addEventListener('click', () => {
-        audio.playClick();
-        this.openModal(item);
-      });
-
-      container.appendChild(card);
-    });
-  }
-
-  // Auto Ingest Timer
-  restartAutoIngest() {
-    if (this.autoTimer) clearInterval(this.autoTimer);
-    if (!this.autoIngest) return;
-
-    this.autoTimer = setInterval(() => {
-      const categories = ['trash', 'pavement', 'tree', 'hygiene'];
-      const randomCat = categories[Math.floor(Math.random() * categories.length)];
-      audio.playLockOn();
-      this.injectIncident(randomCat);
-    }, this.autoIntervalSec * 1000);
-  }
-
   // 1999 Modal Operations
   openModal(incident) {
     const modal = document.getElementById('ticket-modal');
@@ -929,12 +779,12 @@ class TaipeiDebuggerApp {
     document.getElementById('modal-ticket-id').textContent = incident.id;
     document.getElementById('modal-ticket-category').textContent = incident.categoryName;
     document.getElementById('modal-ticket-severity').textContent =
-      incident.severity === 'high' ? 'HIGH (重大優先)' : 'MEDIUM (一般追蹤)';
+      incident.severity === 'high' ? 'HIGH (重大優先處理)' : 'MEDIUM (一般追蹤修復)';
     document.getElementById('modal-ticket-coords').textContent =
-      `${incident.coordinates.lat}° N, ${incident.coordinates.lng}° E (${incident.sector})`;
+      `${incident.coordinates.lat}° N, ${incident.coordinates.lng}° E (${incident.sectorName} ${incident.mileage || ''})`;
     document.getElementById('modal-ticket-dept').textContent = incident.department;
     document.getElementById('modal-ticket-action').textContent = incident.suggestedAction;
-    document.getElementById('modal-snapshot-img').src = incident.snapshotUrl;
+    document.getElementById('modal-snapshot-img').src = generateSnapshotSvg(incident.category, incident.title, incident.coordinates);
 
     modal.classList.add('show');
   }
@@ -958,19 +808,19 @@ class TaipeiDebuggerApp {
 
   // Export JSON File
   exportJsonFile() {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.incidents, null, 2));
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.activeIncidents, null, 2));
     const dlAnchor = document.createElement('a');
     dlAnchor.setAttribute('href', dataStr);
     dlAnchor.setAttribute('download', 'patrol_data.json');
     document.body.appendChild(dlAnchor);
     dlAnchor.click();
     dlAnchor.remove();
-    this.showToast('💾 已下載 patrol_data.json (共 ' + this.incidents.length + ' 筆資料)');
+    this.showToast(`💾 已匯出 patrol_data.json (共 ${this.activeIncidents.length} 筆資料)`);
   }
 
   // Copy JSON to Clipboard
   copyJsonClipboard() {
-    const jsonStr = JSON.stringify(this.incidents, null, 2);
+    const jsonStr = JSON.stringify(this.activeIncidents, null, 2);
     navigator.clipboard.writeText(jsonStr).then(() => {
       this.showToast('📋 patrol_data.json 已複製到剪貼簿！');
     }).catch(() => {
@@ -985,7 +835,7 @@ class TaipeiDebuggerApp {
       this.bgmPlaying = true;
       this.updateBgmUi(true);
     }).catch((err) => {
-      console.log('Autoplay policy deferred audio until next gesture:', err);
+      console.log('Autoplay deferred:', err);
     });
   }
 
@@ -1009,12 +859,17 @@ class TaipeiDebuggerApp {
   updateBgmUi(isPlaying) {
     const btn = document.getElementById('btn-toggle-bgm');
     const text = document.getElementById('bgm-btn-text');
-    if (btn) btn.classList.toggle('playing', isPlaying);
-    if (text) text.textContent = isPlaying ? '🎵 BGM: UNICORN (ON)' : '🔇 BGM: PAUSED';
+    if (btn) {
+      btn.classList.toggle('playing', isPlaying);
+      btn.title = isPlaying ? '暫停 BGM: UNICORN (澤野弘之)' : '播放 BGM: UNICORN (澤野弘之)';
+    }
+    if (text) {
+      text.textContent = isPlaying ? 'BGM (ON)' : 'BGM (OFF)';
+    }
   }
 
   // ==========================================================================
-  // 4. RADAR CANVAS LOOP (RIVER PATH & BLIPS)
+  // 5. RADAR & ROUTE CANVAS LOOP (INTERACTIVE HOTSPOT PINS)
   // ==========================================================================
   startRadarLoop() {
     if (!this.radarCtx) return;
@@ -1024,12 +879,12 @@ class TaipeiDebuggerApp {
       const w = this.radarCanvas.width;
       const h = this.radarCanvas.height;
 
-      // Fade out background
+      // Dark background
       ctx.fillStyle = '#06080d';
       ctx.fillRect(0, 0, w, h);
 
-      // Draw Grid Lines
-      ctx.strokeStyle = 'rgba(255, 0, 60, 0.12)';
+      // Grid Lines
+      ctx.strokeStyle = 'rgba(255, 0, 60, 0.1)';
       ctx.lineWidth = 1;
       for (let x = 0; x < w; x += 30) {
         ctx.beginPath();
@@ -1044,7 +899,7 @@ class TaipeiDebuggerApp {
         ctx.stroke();
       }
 
-      // Draw River Path (Curved Water Body)
+      // River Water Body
       ctx.beginPath();
       ctx.strokeStyle = 'rgba(0, 243, 255, 0.35)';
       ctx.lineWidth = 18;
@@ -1054,7 +909,7 @@ class TaipeiDebuggerApp {
 
       // Bike / Patrol Path (Dashed Parallel)
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 0, 60, 0.65)';
+      ctx.strokeStyle = 'rgba(255, 0, 60, 0.7)';
       ctx.lineWidth = 3;
       ctx.setLineDash([6, 4]);
       ctx.moveTo(0, h * 0.7 - 20);
@@ -1062,11 +917,7 @@ class TaipeiDebuggerApp {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Rover Position along path
-      this.rover.progress = (this.rover.progress + 0.002) % 1;
-      const t = this.rover.progress;
-
-      // Cubic Bezier calculation
+      // Bezier Path Equation Parameters
       const p0 = { x: 0, y: h * 0.7 - 20 };
       const p1 = { x: w * 0.35, y: h * 0.8 - 20 };
       const p2 = { x: w * 0.65, y: h * 0.2 - 20 };
@@ -1080,54 +931,47 @@ class TaipeiDebuggerApp {
       const by = 3 * (p2.y - p1.y) - cy;
       const ay = p3.y - p0.y - cy - by;
 
-      const roverX = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0.x;
-      const roverY = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
+      // Draw Incident Pins along Path
+      const catColors = {
+        trash: '#ff003c',
+        pavement: '#ff9f1c',
+        tree: '#2ec4b6',
+        hygiene: '#b5179e'
+      };
 
-      // Update Rover Lat/Lng display based on progress
-      this.rover.lat = parseFloat((this.currentSector.center.lat + (t - 0.5) * this.currentSector.deltaLat).toFixed(4));
-      this.rover.lng = parseFloat((this.currentSector.center.lng + (t - 0.5) * this.currentSector.deltaLng).toFixed(4));
-      const latEl = document.getElementById('rover-lat');
-      const lngEl = document.getElementById('rover-lng');
-      if (latEl && lngEl) {
-        latEl.textContent = this.rover.lat;
-        lngEl.textContent = this.rover.lng;
-      }
+      this.activeIncidents.forEach((item, index) => {
+        const t = item.routeT || ((index * 0.18 + 0.1) % 0.9);
+        const px = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0.x;
+        const py = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
 
-      // Draw Incident Blips on Radar
-      this.incidents.slice(0, 8).forEach((item, index) => {
-        const blipT = (index * 0.12 + 0.1) % 1;
-        const bx = ax * Math.pow(blipT, 3) + bx * Math.pow(blipT, 2) + cx * blipT + p0.x;
-        const by = ay * Math.pow(blipT, 3) + by * Math.pow(blipT, 2) + cy * blipT + p0.y;
+        const isHovered = this.hoveredPinIndex === index;
+        const isSelected = this.selectedIncident && this.selectedIncident.id === item.id;
+        const color = catColors[item.category] || '#ff003c';
 
-        // Pulsing red dot
-        const pulse = Math.sin(Date.now() * 0.005 + index) * 3 + 4;
-        ctx.fillStyle = item.severity === 'high' ? '#ff003c' : '#ffb703';
+        // Outer pulsing ring
+        const pulse = Math.sin(Date.now() * 0.005 + index) * 3 + (isSelected ? 7 : 5);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = isSelected ? 2.5 : 1.5;
         ctx.beginPath();
-        ctx.arc(bx, by, Math.max(2, pulse), 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = item.severity === 'high' ? 'rgba(255, 0, 60, 0.4)' : 'rgba(255, 183, 3, 0.4)';
-        ctx.beginPath();
-        ctx.arc(bx, by, pulse + 4, 0, Math.PI * 2);
+        ctx.arc(px, py, pulse + (isSelected ? 6 : 4), 0, Math.PI * 2);
         ctx.stroke();
+
+        // Inner Solid Dot
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = isSelected || isHovered ? 14 : 6;
+        ctx.beginPath();
+        ctx.arc(px, py, isSelected ? 6.5 : (isHovered ? 5.5 : 4), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Anomaly Label Tag for selected
+        if (isSelected) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 9px "Share Tech Mono", monospace';
+          ctx.fillText(`[${item.id}]`, px - 18, py - 14);
+        }
       });
-
-      // Draw Rover Unit Icon (Glow Arrow)
-      ctx.fillStyle = '#00f3ff';
-      ctx.shadowColor = '#00f3ff';
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.arc(roverX, roverY, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // Rover Radar Sweep Cone
-      const angle = (Date.now() * 0.003) % (Math.PI * 2);
-      ctx.strokeStyle = 'rgba(0, 243, 255, 0.25)';
-      ctx.beginPath();
-      ctx.moveTo(roverX, roverY);
-      ctx.lineTo(roverX + Math.cos(angle) * 35, roverY + Math.sin(angle) * 35);
-      ctx.stroke();
 
       requestAnimationFrame(render);
     };
@@ -1136,7 +980,7 @@ class TaipeiDebuggerApp {
   }
 
   // ==========================================================================
-  // 5. CAMERA CANVAS SIMULATION LOOP (FIRST PERSON VIEW)
+  // 6. AI EVIDENCE VIEWER CANVAS LOOP (SHOWS SELECTED ANOMALY)
   // ==========================================================================
   startCameraSimulationLoop() {
     if (!this.cameraCtx) return;
@@ -1148,83 +992,79 @@ class TaipeiDebuggerApp {
       const w = this.cameraCanvas.width;
       const h = this.cameraCanvas.height;
 
-      // 1. Clear & Draw Dynamic Cyber Twilight Sky
+      // 1. Cyber Twilight Sky Background
       const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.58);
       skyGrad.addColorStop(0, '#0a0d18');
-      skyGrad.addColorStop(0.45, '#1e0c24');
-      skyGrad.addColorStop(0.85, '#52132b');
-      skyGrad.addColorStop(1, '#ff1744'); // Crimson horizon glow
+      skyGrad.addColorStop(0.5, '#1e0c24');
+      skyGrad.addColorStop(1, '#52132b');
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, w, h * 0.58);
 
-      // Star / Digital Sensor Noise Points
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      for (let i = 0; i < 20; i++) {
-        const sx = ((i * 37) + (frame * 0.2)) % w;
-        const sy = (i * 19) % (h * 0.4);
+      // Digital Noise / Star Points
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      for (let i = 0; i < 15; i++) {
+        const sx = (i * 43) % w;
+        const sy = (i * 23) % (h * 0.4);
         ctx.fillRect(sx, sy, 1.5, 1.5);
       }
 
-      // 2. Distant Taipei City Skyline & Hills (Keelung River Basin)
+      // 2. Taipei Skyline & Bridges
       ctx.fillStyle = '#0e121e';
       ctx.beginPath();
       ctx.moveTo(0, h * 0.58);
       ctx.lineTo(0, h * 0.50);
-      ctx.lineTo(35, h * 0.50);
-      ctx.lineTo(40, h * 0.45);
-      ctx.lineTo(75, h * 0.45);
-      ctx.lineTo(80, h * 0.52);
-      ctx.lineTo(130, h * 0.52);
-      ctx.lineTo(135, h * 0.40); // Skyscraper
-      ctx.lineTo(165, h * 0.40);
-      ctx.lineTo(170, h * 0.54);
-      // Taipei 101 Structure
+      ctx.lineTo(50, h * 0.50);
+      ctx.lineTo(60, h * 0.44);
+      ctx.lineTo(110, h * 0.44);
+      ctx.lineTo(120, h * 0.52);
+      ctx.lineTo(170, h * 0.52);
+      ctx.lineTo(175, h * 0.38);
+      ctx.lineTo(205, h * 0.38);
       ctx.lineTo(210, h * 0.54);
-      ctx.lineTo(215, h * 0.32);
-      ctx.lineTo(220, h * 0.22); // Spire
-      ctx.lineTo(222, h * 0.22);
-      ctx.lineTo(224, h * 0.32);
-      ctx.lineTo(228, h * 0.54);
-      // River Bridges (e.g. Dazhi Bridge / Rainbow Bridge cables)
-      ctx.lineTo(280, h * 0.54);
-      ctx.lineTo(340, h * 0.36);
-      ctx.lineTo(400, h * 0.54);
+      // Taipei 101 Structure
+      ctx.lineTo(250, h * 0.54);
+      ctx.lineTo(255, h * 0.28);
+      ctx.lineTo(258, h * 0.18);
+      ctx.lineTo(262, h * 0.54);
+      // Bridge Span
+      ctx.lineTo(320, h * 0.54);
+      ctx.lineTo(380, h * 0.36);
+      ctx.lineTo(440, h * 0.54);
       ctx.lineTo(w, h * 0.54);
       ctx.lineTo(w, h * 0.58);
       ctx.fill();
 
-      // Bridge Cable Lines (Neon Cyan / Red Accent)
-      ctx.strokeStyle = 'rgba(255, 0, 60, 0.4)';
+      // Bridge Cable Lines
+      ctx.strokeStyle = 'rgba(255, 0, 60, 0.3)';
       ctx.lineWidth = 1;
-      for (let c = 290; c <= 390; c += 15) {
+      for (let c = 330; c <= 430; c += 18) {
         ctx.beginPath();
-        ctx.moveTo(340, h * 0.36);
+        ctx.moveTo(380, h * 0.36);
         ctx.lineTo(c, h * 0.54);
         ctx.stroke();
       }
 
-      // 3. Keelung / Tamsui River Waterway (Left Side)
+      // 3. Riverside Waterway (Left)
       const riverGrad = ctx.createLinearGradient(0, h * 0.58, 0, h);
       riverGrad.addColorStop(0, '#0c1a2e');
       riverGrad.addColorStop(1, '#050c18');
       ctx.fillStyle = riverGrad;
       ctx.fillRect(0, h * 0.58, w * 0.36, h * 0.42);
 
-      // Water Ripple Waves
-      ctx.strokeStyle = 'rgba(0, 243, 255, 0.25)';
+      // Water Ripple Lines
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
       ctx.lineWidth = 1;
-      for (let r = 0; r < 5; r++) {
-        const ry = h * 0.62 + r * 14 + (Math.sin(frame * 0.05 + r) * 3);
+      for (let r = 0; r < 4; r++) {
+        const ry = h * 0.64 + r * 16;
         ctx.beginPath();
         ctx.moveTo(10, ry);
         ctx.lineTo(w * 0.32, ry);
         ctx.stroke();
       }
 
-      // 4. Riverside Embankment & Bike Path (Ground Perspective)
+      // 4. Riverside Bike Path (Center to Right)
       const pathGrad = ctx.createLinearGradient(0, h * 0.58, 0, h);
       pathGrad.addColorStop(0, '#242b3d');
-      pathGrad.addColorStop(0.5, '#19202f');
       pathGrad.addColorStop(1, '#0f1420');
       ctx.fillStyle = pathGrad;
       ctx.beginPath();
@@ -1234,95 +1074,103 @@ class TaipeiDebuggerApp {
       ctx.lineTo(w * 0.15, h);
       ctx.fill();
 
-      // Grass Verge (Right Side)
-      ctx.fillStyle = '#0a2118';
-      ctx.beginPath();
-      ctx.moveTo(w * 0.95, h * 0.58);
-      ctx.lineTo(w, h * 0.58);
-      ctx.lineTo(w, h);
-      ctx.lineTo(w * 1.25, h);
-      ctx.fill();
-
-      // 5. 3D Road Grid / Forward Motion Speedlines
-      ctx.strokeStyle = 'rgba(255, 0, 60, 0.45)';
+      // Road Center Divider
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.lineWidth = 2;
-      const speedOffset = (frame * 6) % 50;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.62, h * 0.58);
+      ctx.lineTo(w * 0.68, h);
+      ctx.stroke();
 
-      // Road dividers moving towards camera
-      for (let y = h * 0.60; y < h; y += 28) {
-        const lineY = y + (speedOffset * (y / h));
-        if (lineY > h) continue;
-        const lineProgress = (lineY - h * 0.58) / (h * 0.42);
-        const lineX = (w * 0.62) + (lineProgress * 15);
-        const lineWidth = 15 + (lineProgress * 40);
-
-        ctx.beginPath();
-        ctx.moveTo(lineX - lineWidth / 2, lineY);
-        ctx.lineTo(lineX + lineWidth / 2, lineY);
-        ctx.stroke();
-      }
-
-      // 6. Draw Approaching Municipal Bug / Target
-      const cycle = 160;
-      const progress = (frame % cycle) / cycle;
-      const targetY = (h * 0.60) + Math.pow(progress, 1.8) * (h * 0.32);
-      const targetScale = 0.25 + Math.pow(progress, 1.5) * 1.35;
-      const targetX = (w * 0.66) + Math.sin(frame * 0.03) * 12;
+      // 5. Render Selected Anomaly Evidence Subject
+      const activeItem = this.selectedIncident || this.activeIncidents[0];
+      const targetCategory = activeItem ? activeItem.category : 'trash';
 
       ctx.save();
-      ctx.translate(targetX, targetY);
-      ctx.scale(targetScale, targetScale);
+      ctx.translate(w * 0.62, h * 0.76);
 
-      // Render Trash Can Object
-      ctx.fillStyle = '#1e293b';
-      ctx.strokeStyle = '#ff003c';
-      ctx.lineWidth = 2.5;
-      ctx.fillRect(-20, -45, 40, 50);
-      ctx.strokeRect(-20, -45, 40, 50);
-      
-      // Overflowing trash bags
-      ctx.fillStyle = '#f8fafc';
-      ctx.beginPath();
-      ctx.arc(-8, -52, 12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ff5722';
-      ctx.beginPath();
-      ctx.arc(8, -50, 10, 0, Math.PI * 2);
-      ctx.fill();
+      if (targetCategory === 'trash') {
+        // Trash Can
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = '#ff003c';
+        ctx.lineWidth = 2.5;
+        ctx.fillRect(-28, -50, 56, 65);
+        ctx.strokeRect(-28, -50, 56, 65);
+        // Overflowing Trash
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.arc(-10, -60, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ff5722';
+        ctx.beginPath();
+        ctx.arc(12, -58, 14, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (targetCategory === 'pavement') {
+        // Pavement crack / pothole
+        ctx.strokeStyle = '#ff9f1c';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-50, -10);
+        ctx.lineTo(-20, 10);
+        ctx.lineTo(15, -5);
+        ctx.lineTo(45, 15);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 159, 28, 0.35)';
+        ctx.fillRect(-40, -15, 80, 30);
+      } else if (targetCategory === 'tree') {
+        // Tilted Tree Trunk
+        ctx.save();
+        ctx.rotate(0.32); // 18 degree tilt
+        ctx.fillStyle = '#8d6e63';
+        ctx.fillRect(-8, -90, 16, 100);
+        ctx.fillStyle = '#2ec4b6';
+        ctx.beginPath();
+        ctx.arc(0, -95, 35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        // Hygiene hotspot / rodent symbol
+        ctx.fillStyle = '#374151';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 40, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#b5179e';
+        ctx.beginPath();
+        ctx.arc(28, -5, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
-      // NT-D Psycho Target Box (Flashing Red Bracket)
-      ctx.strokeStyle = '#ff003c';
+      // YOLO Bounding Box & Annotations
+      const boxColor = targetCategory === 'trash' ? '#ff003c' : (targetCategory === 'pavement' ? '#ff9f1c' : (targetCategory === 'tree' ? '#2ec4b6' : '#b5179e'));
+      ctx.strokeStyle = boxColor;
       ctx.lineWidth = 2;
-      ctx.strokeRect(-32, -70, 64, 85);
+      ctx.strokeRect(-55, -95, 110, 125);
 
-      // Corner brackets
-      ctx.fillStyle = '#ff003c';
-      ctx.fillRect(-32, -70, 10, 3);
-      ctx.fillRect(-32, -70, 3, 10);
-      ctx.fillRect(22, -70, 10, 3);
-      ctx.fillRect(29, -70, 3, 10);
-      ctx.fillRect(-32, 12, 10, 3);
-      ctx.fillRect(-32, 5, 3, 10);
-      ctx.fillRect(22, 12, 10, 3);
-      ctx.fillRect(29, 5, 3, 10);
+      // Corner Brackets
+      ctx.fillStyle = boxColor;
+      ctx.fillRect(-55, -95, 12, 3);
+      ctx.fillRect(-55, -95, 3, 12);
+      ctx.fillRect(43, -95, 12, 3);
+      ctx.fillRect(52, -95, 3, 12);
+      ctx.fillRect(-55, 27, 12, 3);
+      ctx.fillRect(-55, 18, 3, 12);
+      ctx.fillRect(43, 27, 12, 3);
+      ctx.fillRect(52, 18, 3, 12);
 
-      // Floating Lock Tag
-      ctx.fillStyle = 'rgba(255, 0, 60, 0.9)';
-      ctx.fillRect(-32, -86, 64, 14);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 9px monospace';
-      ctx.fillText('TARGET LOCK', -30, -75);
+      // Floating AI Tag Header
+      ctx.fillStyle = boxColor;
+      ctx.fillRect(-55, -112, 110, 17);
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 9px "Share Tech Mono", monospace';
+      const confText = activeItem ? `${activeItem.categoryName.substring(0, 6)} ${activeItem.confidence}` : 'AI LOCK 94%';
+      ctx.fillText(confText, -52, -100);
 
       ctx.restore();
 
-      // Scanline Sweep inside viewport
-      const scanY = (frame * 4) % h;
-      ctx.strokeStyle = 'rgba(255, 0, 60, 0.25)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, scanY);
-      ctx.lineTo(w, scanY);
-      ctx.stroke();
+      // Static watermark
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.font = '9px "Share Tech Mono", monospace';
+      ctx.fillText('OFFLINE AI KEYFRAME INSPECTOR // TAIPEI CIVIC DEBUGGER', 12, h - 12);
 
       requestAnimationFrame(render);
     };
@@ -1331,7 +1179,7 @@ class TaipeiDebuggerApp {
   }
 
   // ==========================================================================
-  // 6. PURPLE FLAME & PSYCHO-FRAME EQUALIZER LOOP (MATCHES SCREENSHOT)
+  // 7. PURPLE FLAME & PSYCHO-FRAME EQUALIZER LOOP (MATCHES SCREENSHOT)
   // ==========================================================================
   startFlameAnimationLoop() {
     if (!this.flameCtx) return;
@@ -1431,6 +1279,417 @@ class TaipeiDebuggerApp {
     };
 
     render();
+  }
+
+  // ==========================================================================
+  // VIEW SWITCHER & MUNICIPAL ANALYTICS (ECHARTS ENGINE)
+  // ==========================================================================
+  switchView(viewName) {
+    if (this.currentView === viewName) return;
+    this.currentView = viewName;
+
+    const tacticalGrid = document.querySelector('.cockpit-grid');
+    const analyticsView = document.getElementById('municipal-analytics-view');
+    const tabs = document.querySelectorAll('.hud-view-tab');
+
+    tabs.forEach((tab) => {
+      tab.classList.toggle('active', tab.dataset.view === viewName);
+    });
+
+    if (viewName === 'analytics') {
+      if (tacticalGrid) tacticalGrid.classList.add('hidden');
+      if (analyticsView) analyticsView.classList.remove('hidden');
+      this.initMunicipalCharts();
+      this.showToast('📊 已切換至：市政物件統計與工務局解決進度戰報');
+    } else {
+      if (analyticsView) analyticsView.classList.add('hidden');
+      if (tacticalGrid) tacticalGrid.classList.remove('hidden');
+      this.showToast('🎯 已切換至：戰術巡檢地圖與 1999 派工清單');
+    }
+  }
+
+  // Render & Resize all 4 ECharts Panels
+  initMunicipalCharts() {
+    if (typeof echarts === 'undefined') {
+      console.warn('ECharts not loaded yet');
+      return;
+    }
+
+    // Chart 1: Category Distribution (Donut Chart)
+    this.renderCategoryDonutChart();
+
+    // Chart 2: Resolution & Dispatch Funnel
+    this.renderResolveFunnelChart();
+
+    // Chart 3: Sector Hotspot Comparison (Bar Chart)
+    this.renderSectorBarChart();
+
+    // Chart 4: 7-Day Trend & MTTR Reduction (Line Area Chart)
+    this.renderTrendLineChart();
+
+    // Auto-resize on window resize
+    if (!this._chartResizeBound) {
+      window.addEventListener('resize', () => {
+        Object.values(this.echartsInstances).forEach((inst) => inst && inst.resize());
+      });
+      this._chartResizeBound = true;
+    }
+  }
+
+  // Chart 1: Donut breakdown of defects
+  renderCategoryDonutChart() {
+    const el = document.getElementById('chart-category-donut');
+    if (!el) return;
+
+    if (!this.echartsInstances.donut) {
+      this.echartsInstances.donut = echarts.init(el, 'dark', { renderer: 'canvas' });
+    }
+    const chart = this.echartsInstances.donut;
+
+    // Filter by date or all if range-7d
+    const targetPool = this.currentDate === 'range-7d'
+      ? PRESET_INSPECTIONS
+      : PRESET_INSPECTIONS.filter((i) => i.date === this.currentDate);
+    const pool = targetPool.length > 0 ? targetPool : PRESET_INSPECTIONS;
+
+    const countTrash = pool.filter((i) => i.category === 'trash').length;
+    const countPavement = pool.filter((i) => i.category === 'pavement').length;
+    const countTree = pool.filter((i) => i.category === 'tree').length;
+    const countHygiene = pool.filter((i) => i.category === 'hygiene').length;
+
+    const option = {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: <b>{c} 處</b> ({d}%)',
+        backgroundColor: 'rgba(13, 16, 24, 0.95)',
+        borderColor: '#ff003c',
+        borderWidth: 1,
+        textStyle: { color: '#fff', fontFamily: 'Share Tech Mono' }
+      },
+      legend: {
+        orient: 'vertical',
+        right: '4%',
+        top: 'middle',
+        itemGap: 12,
+        textStyle: {
+          color: '#cbd5e1',
+          fontSize: 11,
+          fontFamily: 'Noto Sans TC, Share Tech Mono'
+        }
+      },
+      series: [
+        {
+          name: '異常分類',
+          type: 'pie',
+          radius: ['45%', '72%'],
+          center: ['36%', '50%'],
+          avoidLabelOverlap: true,
+          itemStyle: {
+            borderRadius: 4,
+            borderColor: '#0d1018',
+            borderWidth: 2
+          },
+          label: {
+            show: false,
+            position: 'center'
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 14,
+              fontWeight: 'bold',
+              color: '#00f3ff',
+              formatter: '{b}\n{d}%'
+            },
+            itemStyle: {
+              shadowBlur: 14,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 243, 255, 0.6)'
+            }
+          },
+          data: [
+            { value: countTrash || 1, name: '#02 滿溢/遺失垃圾桶', itemStyle: { color: '#ff003c' } },
+            { value: countPavement || 1, name: '#07 地磚坑洞與標線磨損', itemStyle: { color: '#00f3ff' } },
+            { value: countTree || 1, name: '#01 枯木/倒木/空樹穴', itemStyle: { color: '#10b981' } },
+            { value: countHygiene || 1, name: '#03 鼠患堆置死角', itemStyle: { color: '#f59e0b' } }
+          ]
+        }
+      ]
+    };
+
+    chart.setOption(option);
+    setTimeout(() => chart.resize(), 50);
+  }
+
+  // Chart 2: Resolution Funnel
+  renderResolveFunnelChart() {
+    const el = document.getElementById('chart-resolve-funnel');
+    if (!el) return;
+
+    if (!this.echartsInstances.funnel) {
+      this.echartsInstances.funnel = echarts.init(el, 'dark', { renderer: 'canvas' });
+    }
+    const chart = this.echartsInstances.funnel;
+
+    const targetPool = this.currentDate === 'range-7d'
+      ? PRESET_INSPECTIONS
+      : PRESET_INSPECTIONS.filter((i) => i.date === this.currentDate);
+    const pool = targetPool.length > 0 ? targetPool : PRESET_INSPECTIONS;
+
+    const total = pool.length;
+    const dispatched = pool.filter((i) => i.status === 'dispatched').length;
+    const inProgress = Math.max(1, Math.round(dispatched * 0.9));
+    const resolved = Math.max(1, Math.round(dispatched * 0.8));
+
+    const option = {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: <b>{c} 件</b> ({d}%)',
+        backgroundColor: 'rgba(13, 16, 24, 0.95)',
+        borderColor: '#00f3ff',
+        textStyle: { color: '#fff', fontFamily: 'Share Tech Mono' }
+      },
+      series: [
+        {
+          name: '1999 派工修復鏈路',
+          type: 'funnel',
+          left: '10%',
+          top: 20,
+          bottom: 20,
+          width: '80%',
+          min: 0,
+          max: total,
+          minSize: '30%',
+          maxSize: '100%',
+          sort: 'descending',
+          gap: 4,
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: '{b} ({c}件)',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontFamily: 'Noto Sans TC, Share Tech Mono'
+          },
+          itemStyle: {
+            borderColor: '#0d1018',
+            borderWidth: 2
+          },
+          data: [
+            { value: total, name: '1. AI 巡檢辨識成案', itemStyle: { color: '#ff003c' } },
+            { value: dispatched, name: `2. 1999 自動立案派發 (${Math.round((dispatched / total) * 100)}%)`, itemStyle: { color: '#a855f7' } },
+            { value: inProgress, name: `3. 工務局處現場進場 (${Math.round((inProgress / total) * 100)}%)`, itemStyle: { color: '#00f3ff' } },
+            { value: resolved, name: `4. 完工驗收與修復結案 (${Math.round((resolved / total) * 100)}%)`, itemStyle: { color: '#10b981' } }
+          ]
+        }
+      ]
+    };
+
+    chart.setOption(option);
+    setTimeout(() => chart.resize(), 50);
+  }
+
+  // Chart 3: Sector Hotspot Comparison
+  renderSectorBarChart() {
+    const el = document.getElementById('chart-sector-bar');
+    if (!el) return;
+
+    if (!this.echartsInstances.bar) {
+      this.echartsInstances.bar = echarts.init(el, 'dark', { renderer: 'canvas' });
+    }
+    const chart = this.echartsInstances.bar;
+
+    // Filter by date or entire dataset
+    const targetPool = this.currentDate === 'range-7d'
+      ? PRESET_INSPECTIONS
+      : PRESET_INSPECTIONS.filter((i) => i.date === this.currentDate);
+    const pool = targetPool.length > 0 ? targetPool : PRESET_INSPECTIONS;
+
+    const sectorKeys = ['dadaocheng', 'dajia', 'rainbow', 'guandu'];
+    const sectorLabels = ['大稻埕水岸', '大佳河濱', '彩虹河濱', '關渡高灘地'];
+
+    const resolvedData = sectorKeys.map((sec) => {
+      const items = pool.filter((i) => i.sectorKey === sec);
+      const dispatched = items.filter((i) => i.status === 'dispatched').length;
+      return Math.max(1, Math.round(dispatched * 0.8));
+    });
+
+    const pendingData = sectorKeys.map((sec) => {
+      const items = pool.filter((i) => i.sectorKey === sec);
+      const pending = items.filter((i) => i.status !== 'dispatched').length;
+      return Math.max(1, pending || Math.round(items.length * 0.2));
+    });
+
+    const option = {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: 'rgba(13, 16, 24, 0.95)',
+        borderColor: '#a855f7',
+        textStyle: { color: '#fff', fontFamily: 'Share Tech Mono' }
+      },
+      legend: {
+        top: 6,
+        right: '4%',
+        textStyle: { color: '#cbd5e1', fontSize: 11, fontFamily: 'Noto Sans TC' }
+      },
+      grid: {
+        left: '4%',
+        right: '4%',
+        bottom: '8%',
+        top: '20%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: sectorLabels,
+        axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.2)' } },
+        axisLabel: { color: '#cbd5e1', fontFamily: 'Noto Sans TC' }
+      },
+      yAxis: {
+        type: 'value',
+        name: '件數',
+        nameTextStyle: { color: '#94a3b8' },
+        splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.08)' } },
+        axisLabel: { color: '#94a3b8', fontFamily: 'Share Tech Mono' }
+      },
+      series: [
+        {
+          name: '已修復結案',
+          type: 'bar',
+          stack: 'total',
+          emphasis: { focus: 'series' },
+          itemStyle: { color: '#10b981' },
+          data: resolvedData
+        },
+        {
+          name: '派工處理中',
+          type: 'bar',
+          stack: 'total',
+          emphasis: { focus: 'series' },
+          itemStyle: { color: '#ff003c' },
+          data: pendingData
+        }
+      ]
+    };
+
+    chart.setOption(option);
+    setTimeout(() => chart.resize(), 50);
+  }
+
+  // Chart 4: 7-Day Trend
+  renderTrendLineChart() {
+    const el = document.getElementById('chart-trend-line');
+    if (!el) return;
+
+    if (!this.echartsInstances.line) {
+      this.echartsInstances.line = echarts.init(el, 'dark', { renderer: 'canvas' });
+    }
+    const chart = this.echartsInstances.line;
+
+    const option = {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(13, 16, 24, 0.95)',
+        borderColor: '#00f3ff',
+        textStyle: { color: '#fff', fontFamily: 'Share Tech Mono' }
+      },
+      legend: {
+        top: 6,
+        right: '4%',
+        textStyle: { color: '#cbd5e1', fontSize: 11, fontFamily: 'Noto Sans TC' }
+      },
+      grid: {
+        left: '4%',
+        right: '4%',
+        bottom: '8%',
+        top: '20%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: ['10/08', '10/09', '10/10', '10/11', '10/12', '10/13', '10/14 (今日)'],
+        axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.2)' } },
+        axisLabel: { color: '#cbd5e1', fontFamily: 'Share Tech Mono' }
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.08)' } },
+        axisLabel: { color: '#94a3b8', fontFamily: 'Share Tech Mono' }
+      },
+      series: [
+        {
+          name: '每日新辨識異常',
+          type: 'line',
+          smooth: true,
+          lineStyle: { width: 3, color: '#ff003c' },
+          itemStyle: { color: '#ff003c' },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(255, 0, 60, 0.35)' },
+              { offset: 1, color: 'rgba(255, 0, 60, 0.01)' }
+            ])
+          },
+          data: [26, 22, 19, 18, 16, 14, 13]
+        },
+        {
+          name: '當日修復結案數',
+          type: 'line',
+          smooth: true,
+          lineStyle: { width: 3, color: '#00f3ff' },
+          itemStyle: { color: '#00f3ff' },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(0, 243, 255, 0.3)' },
+              { offset: 1, color: 'rgba(0, 243, 255, 0.01)' }
+            ])
+          },
+          data: [15, 18, 20, 21, 19, 17, 18]
+        }
+      ]
+    };
+
+    chart.setOption(option);
+    setTimeout(() => chart.resize(), 50);
+  }
+
+  // ==========================================================================
+  // DYNAMIC ECHARTS DATA CONNECTOR (REACTS TO DATE & SECTOR FILTERS)
+  // ==========================================================================
+  updateMunicipalAnalyticsData() {
+    // Determine scope of records: if range-7d, all records; else by date
+    const dateRecords = this.currentDate === 'range-7d'
+      ? PRESET_INSPECTIONS
+      : PRESET_INSPECTIONS.filter((i) => i.date === this.currentDate);
+
+    // Records filtered by date + sector
+    const currentSlice = dateRecords.filter((i) => i.sectorKey === this.currentSectorKey);
+    const activePool = currentSlice.length > 0 ? currentSlice : dateRecords;
+
+    // 1. Update KPI Cards Dynamically
+    const totalCount = activePool.length;
+    const dispatchedCount = activePool.filter((i) => i.status === 'dispatched').length;
+    const dispatchRate = totalCount > 0 ? ((dispatchedCount / totalCount) * 100).toFixed(1) : '100.0';
+    const resolvedEstimate = totalCount > 0 ? Math.round(dispatchedCount * 0.85) : 0;
+    const resolveRate = totalCount > 0 ? ((resolvedEstimate / totalCount) * 100).toFixed(1) : '85.0';
+
+    const kpiTotal = document.getElementById('kpi-total-defects');
+    const kpiDispatch = document.getElementById('kpi-dispatch-rate');
+    const kpiResolve = document.getElementById('kpi-resolve-rate');
+
+    if (kpiTotal) kpiTotal.textContent = totalCount;
+    if (kpiDispatch) kpiDispatch.textContent = dispatchRate;
+    if (kpiResolve) kpiResolve.textContent = resolveRate;
+
+    // 2. Refresh charts if already initialized or currently in analytics view
+    if (this.currentView === 'analytics' || this.echartsInstances.donut) {
+      this.initMunicipalCharts();
+    }
   }
 }
 

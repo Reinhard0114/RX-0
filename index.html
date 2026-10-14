@@ -11,6 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="style.css">
+  <!-- Apache ECharts for Dark Mecha Municipal Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 </head>
 <body class="ntd-mode">
   <!-- CRT Scanlines and Cockpit Vignette Overlay -->
@@ -114,52 +116,80 @@
   <!-- ============================================================== -->
   <div class="cockpit-container" id="main-cockpit">
     
-    <!-- Top Cockpit Status Bar -->
+    <!-- Top Cockpit Status Bar (Streamlined & Integrated) -->
     <header class="hud-topbar">
+      <!-- 1. Left: Brand Logo as Home Button + Concise Status Tag -->
       <div class="topbar-left">
-        <div class="cockpit-badge">
+        <button id="btn-brand-home" class="cockpit-badge-btn" title="點擊返回 NT-D 啟動儀式首頁 (RE-TRIGGER NT-D)">
           <span class="badge-icon">⬢</span>
-          <span class="badge-title">RX-0 ROVER [DEBUGGER]</span>
-        </div>
+          <span class="badge-title">RX-0 ROVER</span>
+          <span class="badge-home-tag">HOME ⚡</span>
+        </button>
         <div class="system-mode-tag">
-          <span class="mode-label">STATUS</span>
-          <span class="mode-value mode-destroy">DESTROY MODE // NT-D ACTIVE</span>
+          <span class="mode-destroy">ANALYSIS READY</span>
         </div>
+
+        <!-- View Mode Switcher: Tactical Patrol vs Municipal Analytics -->
+        <nav class="hud-view-nav" aria-label="畫面切換">
+          <button id="tab-tactical-view" class="hud-view-tab active" data-view="tactical" title="戰術巡邏航線與 1999 派工視圖">
+            <span class="tab-icon">🎯</span>
+            <span class="tab-label">戰術巡檢視圖</span>
+          </button>
+          <button id="tab-analytics-view" class="hud-view-tab" data-view="analytics" title="市政物件統計與工務局解決進度戰報">
+            <span class="tab-icon">📊</span>
+            <span class="tab-label">市政統計戰報</span>
+            <span class="tab-badge">ECharts</span>
+          </button>
+        </nav>
       </div>
 
+      <!-- 2. Center: Mission Date & Psycho-Frame Resonance -->
       <div class="topbar-center">
+        <!-- Mission Date Fast Filter -->
+        <div class="mission-date-control">
+          <span class="ctrl-icon">📅</span>
+          <label for="mission-date-select" class="ctrl-label">任務日期：</label>
+          <select id="mission-date-select" class="hud-select-date">
+            <option value="2026-10-14" selected>2026-10-14 (今日最新巡邏)</option>
+            <option value="2026-10-13">2026-10-13 (昨日紀錄分析)</option>
+            <option value="2026-10-12">2026-10-12 (防汛專案巡檢)</option>
+            <option value="2026-10-11">2026-10-11 (週末例行巡檢)</option>
+            <option value="2026-10-10">2026-10-10 (國慶假期特勤)</option>
+            <option value="range-7d">近 7 日歷史彙整大數據</option>
+          </select>
+        </div>
+
+        <!-- Compact Resonance Bar -->
         <div class="psycho-sync-meter">
-          <span class="meter-label">PSYCHO-FRAME RESONANCE</span>
+          <span class="meter-label">PSYCHO-FRAME</span>
           <div class="meter-bar-wrap">
             <div class="meter-bar" id="resonance-meter-bar" style="width: 94%;"></div>
           </div>
-          <span class="meter-val" id="resonance-val">94.8% CRITICAL</span>
+          <span class="meter-val" id="resonance-val">95%</span>
         </div>
       </div>
 
+      <!-- 3. Right: Taipei Live Clock + Integrated Audio Hub -->
       <div class="topbar-right">
         <div class="clock-display">
-          <span class="clock-label">TAIPEI TIME</span>
-          <span class="clock-time" id="live-clock">22:30:45</span>
+          <span class="clock-time" id="live-clock">2026-10-14 15:30:00</span>
         </div>
 
-        <!-- NT-D BGM Player Widget -->
-        <div class="bgm-player-widget" id="bgm-widget">
-          <button id="btn-toggle-bgm" class="btn-action-small btn-bgm" title="切換 BGM 播放/暫停">
+        <!-- Integrated Audio Hub (BGM + Volume + Sound FX) -->
+        <div class="audio-master-hub" id="audio-hub">
+          <button id="btn-toggle-bgm" class="btn-hub-bgm" title="播放 / 暫停 BGM: UNICORN">
             <span class="eq-bars">
               <span></span><span></span><span></span><span></span>
             </span>
-            <span id="bgm-btn-text">🎵 BGM: UNICORN</span>
+            <span id="bgm-btn-text">BGM</span>
           </button>
+          
           <input type="range" id="bgm-volume" min="0" max="1" step="0.05" value="0.6" class="hud-volume-slider" title="BGM 音量調節">
-        </div>
 
-        <button id="btn-reboot-ntd" class="btn-action-small" title="重新觸發 NT-D 啟動過場動畫">
-          ⚡ RE-TRIGGER NT-D
-        </button>
-        <button id="btn-audio-control" class="btn-action-small">
-          🔊 AUDIO ON
-        </button>
+          <button id="btn-audio-control" class="btn-hub-sfx" title="切換戰術音效 (ON/OFF)">
+            <span id="sfx-icon">🔊</span>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -169,89 +199,104 @@
     <!-- Main Grid Layout -->
     <main class="cockpit-grid">
 
-      <!-- LEFT COLUMN: Mission Patrol Map & Telemetry -->
+      <!-- LEFT COLUMN: Mission Patrol Map & Route Hotspots -->
       <section class="panel-box panel-left">
         <div class="panel-header">
           <span class="panel-tag">[SYS-01]</span>
-          <h2 class="panel-title">河濱巡邏雷達 // RADAR & GPS</h2>
+          <h2 class="panel-title">河濱路線巡檢地圖 // ROUTE & HOTSPOTS</h2>
           <span class="panel-status-dot"></span>
         </div>
 
         <div class="panel-body">
-          <!-- Radar Canvas -->
-          <div class="radar-viewport-wrap">
-            <canvas id="radarCanvas" width="400" height="280"></canvas>
-            <div class="radar-overlay-cross"></div>
-            <div class="radar-coords">
-              <span>LAT: <b id="rover-lat">25.0489</b>° N</span>
-              <span>LNG: <b id="rover-lng">121.5712</b>° E</span>
-              <span>HDG: <b id="rover-heading">072</b>°</span>
-            </div>
-            <div class="rover-speed-badge">
-              <span class="speed-num" id="rover-speed">14.2</span>
-              <span class="speed-unit">KM/H</span>
-            </div>
-          </div>
-
           <!-- River Route Selector -->
           <div class="route-selector-box">
-            <label class="control-label">巡邏路線 // PATROL SECTOR</label>
+            <label class="control-label">巡邏路線河段 // PATROL SECTOR</label>
             <select id="route-select" class="hud-select">
-              <option value="dajia">大佳河濱公園段 (基隆河左岸)</option>
-              <option value="dadaocheng">大稻埕碼頭水岸段 (淡水河右岸)</option>
-              <option value="rainbow">彩虹河濱公園段 (內湖迎風面)</option>
-              <option value="guandu">關渡水鳥保護區段 (高灘地步道)</option>
+              <option value="dajia">大佳河濱公園段 (基隆河左岸 · 4.2 km)</option>
+              <option value="dadaocheng" selected>大稻埕碼頭水岸段 (淡水河右岸 · 3.8 km)</option>
+              <option value="rainbow">彩虹河濱公園段 (內湖迎風面 · 5.1 km)</option>
+              <option value="guandu">關渡水鳥保護區段 (高灘地步道 · 6.5 km)</option>
             </select>
           </div>
 
-          <!-- Unit Telemetry Metrics -->
+          <!-- Radar & Hotspot Map Viewport -->
+          <div class="radar-viewport-wrap">
+            <canvas id="radarCanvas" width="400" height="260"></canvas>
+            <div class="radar-overlay-cross"></div>
+            
+            <!-- Map Pin Hover Popover -->
+            <div id="map-pin-popover" class="map-pin-popover hidden">
+              <div class="popover-title" id="pop-title">PIN TITLE</div>
+              <div class="popover-meta" id="pop-meta">LAT/LNG</div>
+              <div class="popover-action">點擊定位並檢視舉證 ➔</div>
+            </div>
+
+            <div class="radar-coords">
+              <span>SECTOR: <b id="rover-sector-tag">淡水河右岸</b></span>
+              <span>INSPECTION PIN: <b id="map-pin-count">5 HOTSPOTS</b></span>
+            </div>
+            <div class="rover-speed-badge">
+              <span class="speed-num" id="stat-cov-badge">98.5%</span>
+              <span class="speed-unit">COVERAGE</span>
+            </div>
+          </div>
+
+          <!-- Map Legend for Anomaly Types -->
+          <div class="map-legend-bar">
+            <span class="legend-item"><span class="legend-dot dot-trash"></span>#02 滿溢垃圾桶</span>
+            <span class="legend-item"><span class="legend-dot dot-pavement"></span>#07 地磚坑洞</span>
+            <span class="legend-item"><span class="legend-dot dot-tree"></span>#01 傾斜路樹</span>
+            <span class="legend-item"><span class="legend-dot dot-hygiene"></span>#03 衛生死角</span>
+          </div>
+
+          <!-- Mission Telemetry Metrics (Batch Results) -->
           <div class="telemetry-grid">
             <div class="telem-item">
-              <span class="telem-label">BATTERY (LI-ION)</span>
+              <span class="telem-label">PATROL DISTANCE</span>
               <div class="telem-val-wrap">
-                <span class="telem-val" id="telem-battery">86%</span>
-                <div class="telem-microbar"><div style="width: 86%;"></div></div>
+                <span class="telem-val" id="telem-dist">3.8 km</span>
+                <span class="telem-sub">ROUTE COMPLETED</span>
               </div>
             </div>
             <div class="telem-item">
-              <span class="telem-label">AI VISION FPS</span>
+              <span class="telem-label">PROCESSED FRAMES</span>
               <div class="telem-val-wrap">
-                <span class="telem-val">59.8 FPS</span>
-                <span class="telem-sub">YOLO+GEMINI</span>
+                <span class="telem-val" id="telem-frames">3,420 F</span>
+                <span class="telem-sub">OFFLINE YOLOv10</span>
               </div>
             </div>
             <div class="telem-item">
-              <span class="telem-label">LIDAR ACCURACY</span>
+              <span class="telem-label">ANOMALIES FOUND</span>
               <div class="telem-val-wrap">
-                <span class="telem-val">±1.2 cm</span>
-                <span class="telem-sub">3D MESH</span>
+                <span class="telem-val text-red" id="telem-anomalies">5 處</span>
+                <span class="telem-sub">VERIFIED DEFECTS</span>
               </div>
             </div>
             <div class="telem-item">
-              <span class="telem-label">TOTAL DISTANCE</span>
+              <span class="telem-label">AVG CONFIDENCE</span>
               <div class="telem-val-wrap">
-                <span class="telem-val" id="telem-dist">18.4 km</span>
-                <span class="telem-sub">SESSION</span>
+                <span class="telem-val" id="telem-conf">94.2%</span>
+                <span class="telem-sub">PRECISION</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- CENTER COLUMN: Rover Camera Feed & Targeting HUD -->
+      <!-- CENTER COLUMN: AI Keyframe Evidence Viewer & Targeting HUD -->
       <section class="panel-box panel-center">
         <div class="panel-header">
           <span class="panel-tag">[VISION-02]</span>
-          <h2 class="panel-title">無人車前端即時視角 // AI TARGETING HUD</h2>
-          <div class="vision-indicator blink-red">
-            <span class="dot"></span> REC 4K // AI LOCK ENGAGED
+          <h2 class="panel-title">AI 瑕疵舉證與影格檢視 // EVIDENCE VIEWER</h2>
+          <div class="vision-indicator blink-green">
+            <span class="dot"></span> KEYFRAME INSPECTION // 關鍵影格分析舉證
           </div>
         </div>
 
         <div class="panel-body">
           <!-- Camera Feed Simulation Canvas -->
           <div class="camera-feed-viewport" id="camera-viewport">
-            <canvas id="cameraCanvas" width="640" height="360"></canvas>
+            <canvas id="cameraCanvas" width="640" height="350"></canvas>
             
             <!-- Mecha Targeting Reticle & HUD Overlay Elements -->
             <div class="camera-hud-decorations">
@@ -266,29 +311,29 @@
                 <div class="target-center-pip"></div>
               </div>
 
-              <!-- Top Left Pitch/Roll HUD -->
+              <!-- Top Left Telemetry Overlay -->
               <div class="attitude-indicator">
-                <span>PITCH: +0.4°</span>
-                <span>ROLL: -0.1°</span>
-                <span>FOV: 118° WIDE</span>
+                <span id="ev-timestamp">RECORDED: 11:24:18</span>
+                <span id="ev-frameid">FRAME: #01842</span>
+                <span>STATUS: AI ANNOTATED</span>
               </div>
 
               <!-- Dynamic Target Info Box (Updated by JS on detection) -->
               <div class="hud-target-lock-box" id="target-lock-box">
                 <div class="lock-header">
-                  <span class="lock-alert">TARGET LOCK</span>
+                  <span class="lock-alert">TARGET EVIDENCE LOCK</span>
                   <span class="lock-conf" id="lock-conf">94.8%</span>
                 </div>
-                <div class="lock-title" id="lock-title">#02 找回消失的垃圾桶：滿溢警報</div>
-                <div class="lock-dept" id="lock-dept">權責局處：環保局公館/大同清潔隊</div>
-                <div class="lock-coords" id="lock-coords">COORD: 25.0512, 121.5684</div>
+                <div class="lock-title" id="lock-title">#02 找回消失的垃圾桶：容量滿溢警報</div>
+                <div class="lock-dept" id="lock-dept">權責局處：環境保護局 大同清潔隊</div>
+                <div class="lock-coords" id="lock-coords">COORD: 25.0569°N, 121.5078°E (大稻埕碼頭 0K+850)</div>
               </div>
             </div>
           </div>
 
           <!-- Quick Action: Manual Incident Injection Bar -->
           <div class="incident-inject-toolbar">
-            <span class="toolbar-label">手動觸發測試事件 // INJECT FAKE BUG:</span>
+            <span class="toolbar-label">手動注入測試案例 // INJECT TEST BUG:</span>
             <div class="inject-btn-group">
               <button class="btn-inject" data-cat="trash" title="模擬偵測到垃圾桶滿溢或周遭棄置">
                 🗑️ 垃圾桶滿溢
@@ -307,36 +352,67 @@
         </div>
       </section>
 
-      <!-- RIGHT COLUMN: Incident Logs & Fake Data Generator -->
+      <!-- RIGHT COLUMN: Analytics Summary & 1999 Dispatch Pipeline -->
       <section class="panel-box panel-right">
         <div class="panel-header">
           <span class="panel-tag">[DATA-03]</span>
-          <h2 class="panel-title">市政痛點回報串流 // DATA PIPELINE</h2>
-          <span class="badge-count" id="incident-count-badge">8 ISSUES</span>
+          <h2 class="panel-title">市政工單流與統計報表 // ANALYTICS & 1999</h2>
+          <span class="badge-count" id="incident-count-badge">5 ISSUES</span>
         </div>
 
         <div class="panel-body">
           
-          <!-- Generator Configuration & Controls -->
-          <div class="generator-controls-card">
-            <div class="gen-row">
-              <span class="gen-title">自動巡檢模擬 // SIMULATION</span>
-              <button id="btn-toggle-auto" class="btn-toggle-auto running">
-                <span class="toggle-led"></span>
-                <span id="auto-state-text">AUTO INGEST: ON</span>
-              </button>
-            </div>
-            
-            <div class="gen-tools-row">
-              <div class="input-inline">
-                <label>間隔 (秒):</label>
-                <input type="number" id="auto-interval" min="1" max="10" value="3" class="hud-num-input">
+          <!-- Analytics KPI Summary Cards (New Feature) -->
+          <div class="analytics-kpi-grid">
+            <div class="kpi-card kpi-trash">
+              <div class="kpi-icon">🗑️</div>
+              <div class="kpi-info">
+                <span class="kpi-label">#02 垃圾桶滿溢</span>
+                <span class="kpi-val" id="stat-trash">0</span>
               </div>
-              <button id="btn-generate-batch" class="btn-hud-action">
-                🎲 批次產 10 筆
-              </button>
+            </div>
+            <div class="kpi-card kpi-pavement">
+              <div class="kpi-icon">⚠️</div>
+              <div class="kpi-info">
+                <span class="kpi-label">#07 步道破損</span>
+                <span class="kpi-val" id="stat-pavement">0</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-tree">
+              <div class="kpi-icon">🌳</div>
+              <div class="kpi-info">
+                <span class="kpi-label">#01 傾斜路樹</span>
+                <span class="kpi-val" id="stat-tree">0</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-hygiene">
+              <div class="kpi-icon">🐀</div>
+              <div class="kpi-info">
+                <span class="kpi-label">#03 衛生死角</span>
+                <span class="kpi-val" id="stat-hygiene">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dispatch Progress Bar -->
+          <div class="dispatch-progress-card">
+            <div class="progress-label-row">
+              <span class="prog-title">1999 派工進度 (DISPATCH SLA)</span>
+              <span class="prog-val" id="dispatch-prog-rate">100% 派發</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" id="dispatch-prog-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <!-- Batch Data Tools -->
+          <div class="generator-controls-card">
+            <div class="gen-tools-row">
+              <span class="data-loaded-badge" id="data-loaded-badge">
+                📂 已載入 <b id="loaded-summary">2026-10-14 巡邏分析成果</b>
+              </span>
               <button id="btn-clear-data" class="btn-hud-ghost">
-                清空
+                清空重置
               </button>
             </div>
 
@@ -353,7 +429,7 @@
           <!-- Filter Tabs -->
           <div class="category-filters">
             <button class="filter-tab active" data-filter="all">全部 (<span id="count-all">0</span>)</button>
-            <button class="filter-tab" data-filter="trash">垃圾桶 (<span id="count-trash">0</span>)</button>
+            <button class="filter-tab" data-filter="trash">垃圾 (<span id="count-trash">0</span>)</button>
             <button class="filter-tab" data-filter="pavement">步道 (<span id="count-pavement">0</span>)</button>
             <button class="filter-tab" data-filter="tree">路樹 (<span id="count-tree">0</span>)</button>
             <button class="filter-tab" data-filter="hygiene">衛生 (<span id="count-hygiene">0</span>)</button>
@@ -368,6 +444,121 @@
       </section>
 
     </main>
+
+    <!-- ============================================================== -->
+    <!-- 2B. MUNICIPAL ANALYTICS VIEW (ECHARTS CITY GOVERNANCE WAR ROOM) -->
+    <!-- ============================================================== -->
+    <section class="analytics-view-container hidden" id="municipal-analytics-view">
+      
+      <!-- Top KPI Summary Cards -->
+      <div class="analytics-kpi-row">
+        <div class="kpi-hud-card">
+          <div class="kpi-header">
+            <span class="kpi-icon">🎯</span>
+            <span class="kpi-title">累計巡檢案件總數</span>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-number" id="kpi-total-defects">128</span>
+            <span class="kpi-unit">件</span>
+            <span class="kpi-trend positive">▲ 100% 數位建檔</span>
+          </div>
+          <div class="kpi-sub">基隆河 · 淡水河 · 新店溪全段覆蓋</div>
+        </div>
+
+        <div class="kpi-hud-card highlight-cyan">
+          <div class="kpi-header">
+            <span class="kpi-icon">⚡</span>
+            <span class="kpi-title">1999 自動派工率</span>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-number" id="kpi-dispatch-rate">96.8</span>
+            <span class="kpi-unit">%</span>
+            <span class="kpi-trend positive">▲ 0 人工介入立案</span>
+          </div>
+          <div class="kpi-sub">API 直接拋轉至台北市政府陳情系統</div>
+        </div>
+
+        <div class="kpi-hud-card highlight-green">
+          <div class="kpi-header">
+            <span class="kpi-icon">✅</span>
+            <span class="kpi-title">目前結案與修復率</span>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-number" id="kpi-resolve-rate">84.2</span>
+            <span class="kpi-unit">%</span>
+            <span class="kpi-trend positive">▲ 平均處置加速 3.2 倍</span>
+          </div>
+          <div class="kpi-sub">108 件完成復原 · 20 件施工搶修中</div>
+        </div>
+
+        <div class="kpi-hud-card highlight-purple">
+          <div class="kpi-header">
+            <span class="kpi-icon">⏱️</span>
+            <span class="kpi-title">平均修復週期 (MTTR)</span>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-number" id="kpi-avg-mttr">1.4</span>
+            <span class="kpi-unit">天</span>
+            <span class="kpi-trend positive">▼ 原人工通報需 4.5 天</span>
+          </div>
+          <div class="kpi-sub">符合市府「100 天有感市政除錯」承諾</div>
+        </div>
+      </div>
+
+      <!-- Main ECharts Grid (4 Interactive Charts) -->
+      <div class="analytics-charts-grid">
+        
+        <!-- Chart 1: Category Distribution (Donut / Sunburst) -->
+        <div class="chart-panel-box">
+          <div class="chart-panel-header">
+            <div class="header-left">
+              <span class="chart-tag">[CHART-01]</span>
+              <h3 class="chart-title">各類異常物件偵測分佈 (CATEGORIES)</h3>
+            </div>
+            <span class="chart-hint">AI 辨識比例</span>
+          </div>
+          <div class="chart-viewport" id="chart-category-donut"></div>
+        </div>
+
+        <!-- Chart 2: Resolution Funnel & Progress (Funnel / Gauge) -->
+        <div class="chart-panel-box">
+          <div class="chart-panel-header">
+            <div class="header-left">
+              <span class="chart-tag">[CHART-02]</span>
+              <h3 class="chart-title">1999 跨局處派工與解決進度漏斗 (SLA FUNNEL)</h3>
+            </div>
+            <span class="chart-hint">派工鏈路進度</span>
+          </div>
+          <div class="chart-viewport" id="chart-resolve-funnel"></div>
+        </div>
+
+        <!-- Chart 3: Sector Hotspot Comparison (Bar / Radar) -->
+        <div class="chart-panel-box">
+          <div class="chart-panel-header">
+            <div class="header-left">
+              <span class="chart-tag">[CHART-03]</span>
+              <h3 class="chart-title">四大重點河濱段案件量與處置熱區 (SECTORS)</h3>
+            </div>
+            <span class="chart-hint">大佳 / 大稻埕 / 彩虹 / 關渡</span>
+          </div>
+          <div class="chart-viewport" id="chart-sector-bar"></div>
+        </div>
+
+        <!-- Chart 4: 7-Day Trend & MTTR Reduction (Line / Area) -->
+        <div class="chart-panel-box">
+          <div class="chart-panel-header">
+            <div class="header-left">
+              <span class="chart-tag">[CHART-04]</span>
+              <h3 class="chart-title">近期異常發現 vs 修復結案趨勢 (7-DAY TREND)</h3>
+            </div>
+            <span class="chart-hint">即時動態收斂</span>
+          </div>
+          <div class="chart-viewport" id="chart-trend-line"></div>
+        </div>
+
+      </div>
+
+    </section>
 
     <!-- Cockpit Footer Telemetry Ticker -->
     <footer class="hud-footer">
@@ -454,7 +645,9 @@
   <!-- Notification Toast -->
   <div id="hud-toast" class="hud-toast"></div>
 
-  <!-- Main JavaScript -->
+  <!-- Civic Inspection Database & Fake Data Engine -->
+  <script src="data.js"></script>
+  <!-- Main Application Controller -->
   <script src="app.js"></script>
 </body>
 </html>
