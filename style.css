@@ -745,6 +745,15 @@ html, body {
 .btn-hub-sfx:hover {
   transform: scale(1.15);
 }
+.btn-hub-sfx.muted {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+.btn-ntd-ghost.muted {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-muted);
+  opacity: 0.7;
+}
 
 /* ==========================================================================
    COCKPIT MAIN 3-COLUMN GRID
@@ -863,17 +872,24 @@ html, body {
   bottom: 8px;
   left: 10px;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   display: flex;
-  gap: 10px;
-  background: rgba(5, 7, 10, 0.85);
-  padding: 3px 8px;
+  gap: 12px;
+  background: rgba(5, 7, 10, 0.9);
+  padding: 4px 10px;
   border-radius: 2px;
   border-left: 2px solid var(--psycho-neon);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+}
+.radar-coords span {
+  white-space: nowrap;
 }
 .radar-coords b {
   color: #fff;
+  font-weight: 700;
 }
 
 .rover-speed-badge {
@@ -1808,32 +1824,51 @@ html, body {
   box-shadow: 0 0 10px rgba(255, 0, 127, 0.4);
 }
 
-/* Map Anomaly Legend Bar */
+/* Map Anomaly Legend Bar (Interactive Filter) */
 .map-legend-bar {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 4px 8px;
-  padding: 6px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 8px;
   background: rgba(8, 12, 18, 0.85);
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   margin-top: 8px;
 }
 .legend-item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Share Tech Mono', sans-serif;
-  font-size: 0.72rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
   color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.legend-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.legend-item.active {
+  background: rgba(0, 243, 255, 0.15);
+  border-color: var(--hud-cyan);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(0, 243, 255, 0.25);
 }
 .legend-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   display: inline-block;
   box-shadow: 0 0 6px currentColor;
 }
+.dot-all { background: #00f3ff; color: #00f3ff; }
 .dot-trash { background: #ff003c; color: #ff003c; }
 .dot-pavement { background: #ff9f1c; color: #ff9f1c; }
 .dot-tree { background: #2ec4b6; color: #2ec4b6; }
@@ -1853,6 +1888,17 @@ html, body {
   z-index: 10;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.popover-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  background: rgba(0, 243, 255, 0.15);
+  border: 1px solid var(--hud-cyan);
+  color: var(--hud-cyan);
+  border-radius: 2px;
+  margin-bottom: 4px;
 }
 .map-pin-popover.hidden {
   opacity: 0;
@@ -2216,5 +2262,257 @@ html, body {
   width: 100%;
   height: 250px;
   min-height: 250px;
+}
+
+/* ==========================================================================
+   FAST PASS BUTTON (DEMO SHORTCUT)
+   ========================================================================== */
+.btn-fast-pass {
+  border-color: rgba(0, 243, 255, 0.5) !important;
+  color: var(--hud-cyan) !important;
+}
+.btn-fast-pass:hover {
+  background: rgba(0, 243, 255, 0.15) !important;
+  border-color: var(--hud-cyan) !important;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.4) !important;
+}
+
+/* ==========================================================================
+   LAPLACE'S BOX TOPBAR BUTTON
+   ========================================================================== */
+.btn-laplace-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(255, 215, 0, 0.08));
+  border: 1px solid rgba(255, 215, 0, 0.65);
+  color: #ffd700;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+  margin-left: 6px;
+}
+.btn-laplace-box:hover {
+  border-color: #fff;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.3);
+}
+.btn-laplace-box .box-icon {
+  font-size: 0.85rem;
+}
+.btn-laplace-box .box-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: boxShimmer 3.5s infinite;
+}
+@keyframes boxShimmer {
+  0% { left: -100%; }
+  30% { left: 200%; }
+  100% { left: 200%; }
+}
+
+/* ==========================================================================
+   LAPLACE'S BOX MONUMENT MODAL
+   ========================================================================== */
+.laplace-dialog {
+  max-width: 740px !important;
+  width: 92% !important;
+  background: #07090f !important;
+  border: 2px solid rgba(255, 215, 0, 0.75) !important;
+  box-shadow: 0 0 50px rgba(255, 215, 0, 0.35), inset 0 0 35px rgba(212, 175, 55, 0.12) !important;
+  border-radius: 4px;
+}
+.laplace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 24px 12px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.25);
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.08), transparent);
+}
+.laplace-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: #ffd700;
+  display: block;
+}
+.laplace-title {
+  font-family: var(--font-mecha);
+  font-size: 1.35rem;
+  color: #fff;
+  letter-spacing: 1.5px;
+  margin: 4px 0 2px;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+.laplace-sub {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: #cbd5e1;
+}
+.laplace-body {
+  padding: 20px 24px;
+  max-height: 68vh;
+  overflow-y: auto;
+}
+.monument-stone-slab {
+  background: radial-gradient(circle at center, rgba(30, 35, 50, 0.95), rgba(10, 12, 18, 0.98));
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.85), 0 0 15px rgba(255, 215, 0, 0.2);
+  padding: 16px 20px;
+  border-radius: 4px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.slab-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  color: #ffd700;
+  margin-bottom: 10px;
+}
+.slab-original-text {
+  font-family: "Noto Serif TC", "Noto Sans TC", serif;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #f8fafc;
+  font-style: normal;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+  margin: 0;
+}
+.decl-headline {
+  font-family: var(--font-mecha);
+  font-size: 1.1rem;
+  color: #00ffcc;
+  text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+  margin-bottom: 10px;
+}
+.decl-lead {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+.decl-quote {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #fff;
+  border-left: 3px solid #00ffcc;
+  background: rgba(0, 255, 204, 0.08);
+  padding: 10px 14px;
+  margin: 12px 0 16px;
+  border-radius: 0 4px 4px 0;
+}
+.decl-points {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+.decl-point {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.pt-icon {
+  color: #ffd700;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.decl-point b {
+  color: #fff;
+}
+.laplace-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 14, 22, 0.8);
+}
+.btn-awaken-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #059669, #00ffcc);
+  border: 1px solid #a7f3d0;
+  color: #042f2e;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+  transition: all 0.2s ease;
+}
+.btn-awaken-toggle:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 30px rgba(0, 255, 204, 0.8);
+}
+
+/* ==========================================================================
+   AWAKENED NEWTYPE MODE (GREEN PSYCHO-FRAME THEME)
+   ========================================================================== */
+body.awaken-mode {
+  --psycho-red: #00e6a8;
+  --psycho-neon: #00ffcc;
+  --psycho-glow: rgba(0, 255, 204, 0.45);
+  --psycho-magenta: #38ef7d;
+}
+body.awaken-mode .hud-topbar {
+  border-bottom-color: rgba(0, 255, 204, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 255, 204, 0.15);
+}
+body.awaken-mode .cockpit-badge-btn {
+  border-color: #00ffcc;
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .badge-icon {
+  color: #00ffcc;
+  text-shadow: 0 0 10px #00ffcc;
+}
+body.awaken-mode .meter-bar {
+  background: linear-gradient(90deg, #10b981, #00ffcc, #a7f3d0);
+  box-shadow: 0 0 12px #00ffcc;
+}
+body.awaken-mode .panel-box {
+  border-color: rgba(0, 255, 204, 0.25);
+  box-shadow: inset 0 0 20px rgba(0, 255, 204, 0.05);
+}
+body.awaken-mode .panel-status-dot {
+  background: #00ffcc;
+  box-shadow: 0 0 8px #00ffcc;
+}
+body.awaken-mode .btn-hud-primary {
+  background: linear-gradient(135deg, #059669, #10b981);
+  border-color: #00ffcc;
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+}
+body.awaken-mode .mode-destroy {
+  background: rgba(0, 255, 204, 0.15);
+  border-color: #00ffcc;
+  color: #00ffcc;
+  box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .hud-volume-slider::-webkit-slider-thumb {
+  background: #00ffcc;
+  box-shadow: 0 0 6px #00ffcc;
 }
 

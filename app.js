@@ -134,6 +134,25 @@ class MechaAudioEngine {
       osc.stop(now + delay + 0.15);
     });
   }
+
+  // Gundam Newtype Flash / Psycho-Frame Shimmer Chime
+  playLaplaceChime() {
+    if (!this.enabled || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const freqs = [1046.5, 1318.5, 1567.98, 2093.0, 2637.0, 3136.0]; // C6, E6, G6, C7, E7, G7
+    freqs.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.045);
+      gain.gain.setValueAtTime(0.14, now + idx * 0.045);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.045 + 0.55);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + idx * 0.045);
+      osc.stop(now + idx * 0.045 + 0.55);
+    });
+  }
 }
 
 const audio = new MechaAudioEngine();
@@ -145,6 +164,72 @@ const SECTORS = window.RX0_DATA ? window.RX0_DATA.SECTORS : {};
 const INCIDENT_TEMPLATES = window.RX0_DATA ? window.RX0_DATA.INCIDENT_TEMPLATES : {};
 const PRESET_INSPECTIONS = window.RX0_DATA ? window.RX0_DATA.PRESET_INSPECTIONS : [];
 const generateSnapshotSvg = window.RX0_DATA ? window.RX0_DATA.generateSnapshotSvg : () => '';
+
+// ============================================================================
+// 2.5 SECTOR ROUTE GEOMETRIES & MUNICIPAL LANDMARKS (OFFLINE TRAJECTORY)
+// ============================================================================
+const SECTOR_ROUTES = {
+  dadaocheng: {
+    river: {
+      p0: { x: 0.12, y: 1.0 },
+      p1: { x: 0.22, y: 0.65 },
+      p2: { x: 0.48, y: 0.35 },
+      p3: { x: 0.88, y: 0.15 }
+    },
+    pathOffset: -22,
+    landmarks: [
+      { t: 0.05, label: '5號疏散門 K0.0' },
+      { t: 0.35, label: '大稻埕碼頭市集 K1.2' },
+      { t: 0.68, label: '台北橋水門 K2.5' },
+      { t: 0.95, label: '迪化跨堤台 K3.8' }
+    ]
+  },
+  dajia: {
+    river: {
+      p0: { x: 0.0, y: 0.72 },
+      p1: { x: 0.35, y: 0.86 },
+      p2: { x: 0.65, y: 0.18 },
+      p3: { x: 1.0, y: 0.30 }
+    },
+    pathOffset: -20,
+    landmarks: [
+      { t: 0.05, label: '大直橋下 K0.0' },
+      { t: 0.38, label: '希望之泉 K1.5' },
+      { t: 0.70, label: '8號疏散門 K2.9' },
+      { t: 0.95, label: '濱江抽水站 K4.2' }
+    ]
+  },
+  rainbow: {
+    river: {
+      p0: { x: 0.0, y: 0.38 },
+      p1: { x: 0.32, y: 0.18 },
+      p2: { x: 0.68, y: 0.82 },
+      p3: { x: 1.0, y: 0.62 }
+    },
+    pathOffset: -22,
+    landmarks: [
+      { t: 0.05, label: '麥帥一橋 K0.0' },
+      { t: 0.40, label: '彩虹光雕橋 K1.8' },
+      { t: 0.72, label: '麥帥二橋 K3.4' },
+      { t: 0.95, label: '成美長壽站 K5.1' }
+    ]
+  },
+  guandu: {
+    river: {
+      p0: { x: 0.0, y: 0.82 },
+      p1: { x: 0.38, y: 0.45 },
+      p2: { x: 0.62, y: 0.58 },
+      p3: { x: 1.0, y: 0.16 }
+    },
+    pathOffset: -22,
+    landmarks: [
+      { t: 0.05, label: '水鳥園入口 K0.0' },
+      { t: 0.36, label: '紅樹林木棧道 K2.4' },
+      { t: 0.68, label: '關渡大橋 K4.5' },
+      { t: 0.95, label: '關渡水門哨 K6.5' }
+    ]
+  }
+};
 
 // ============================================================================
 // 3. MAIN APPLICATION CONTROLLER
@@ -169,12 +254,14 @@ class TaipeiDebuggerApp {
     this.flameCanvas = document.getElementById('ntd-flame-canvas');
     this.flameCtx = this.flameCanvas ? this.flameCanvas.getContext('2d') : null;
 
-    // BGM Audio Element
+    // BGM Audio Element & Global Audio Control
     this.bgm = document.getElementById('ntd-bgm');
     this.bgmPlaying = false;
+    this.isMuted = false;
 
-    // NT-D 10s Ignition State
+    // NT-D 10s Ignition State & Awakened Newtype Mode
     this.isNtdIgnited = false;
+    this.isAwakened = false;
     this.countdownTimer = null;
 
     // View Navigation (tactical | analytics)
@@ -187,6 +274,18 @@ class TaipeiDebuggerApp {
   init() {
     if (this.bgm) {
       this.bgm.volume = 0.6;
+      this.bgm.addEventListener('play', () => {
+        this.bgmPlaying = true;
+        this.updateBgmUi(true);
+      });
+      this.bgm.addEventListener('pause', () => {
+        this.bgmPlaying = false;
+        this.updateBgmUi(false);
+      });
+      this.bgm.addEventListener('ended', () => {
+        this.bgmPlaying = false;
+        this.updateBgmUi(false);
+      });
     }
     this.bindEvents();
     this.initBootScreen();
@@ -204,6 +303,32 @@ class TaipeiDebuggerApp {
     if (btnEngage) {
       btnEngage.addEventListener('click', () => {
         this.igniteNtdSequence();
+      });
+    }
+
+    // Boot Screen Sound Toggle (Mute / Unmute)
+    const btnToggleSound = document.getElementById('btn-toggle-sound');
+    if (btnToggleSound) {
+      btnToggleSound.addEventListener('click', (e) => {
+        e.stopPropagation();
+        audio.init();
+        this.toggleMasterMute();
+      });
+    }
+
+    // Fast Pass Demo Shortcut (Skip Countdown instantly)
+    const btnFastPass = document.getElementById('btn-fast-pass');
+    if (btnFastPass) {
+      btnFastPass.addEventListener('click', (e) => {
+        e.stopPropagation();
+        audio.init();
+        audio.playClick();
+        if (this.countdownTimer) {
+          clearInterval(this.countdownTimer);
+          this.countdownTimer = null;
+        }
+        this.dismissBootScreen();
+        this.showToast('⏩ 快速通關：已跳過倒數，進入 RX-0 戰術駕駛艙');
       });
     }
 
@@ -256,7 +381,8 @@ class TaipeiDebuggerApp {
     // BGM Controls
     const btnToggleBgm = document.getElementById('btn-toggle-bgm');
     if (btnToggleBgm) {
-      btnToggleBgm.addEventListener('click', () => {
+      btnToggleBgm.addEventListener('click', (e) => {
+        e.stopPropagation();
         audio.init();
         this.toggleBgm();
       });
@@ -265,25 +391,25 @@ class TaipeiDebuggerApp {
     const bgmVolumeSlider = document.getElementById('bgm-volume');
     if (bgmVolumeSlider) {
       bgmVolumeSlider.addEventListener('input', (e) => {
+        const vol = parseFloat(e.target.value);
         if (this.bgm) {
-          this.bgm.volume = parseFloat(e.target.value);
+          this.bgm.volume = vol;
+          if (vol === 0) {
+            this.setMasterMute(true);
+          } else if (this.isMuted && vol > 0) {
+            this.setMasterMute(false);
+          }
         }
       });
     }
 
+    // Audio Hub: Master Mute & Sound FX Controls
     const btnAudioControl = document.getElementById('btn-audio-control');
     if (btnAudioControl) {
-      btnAudioControl.addEventListener('click', () => {
+      btnAudioControl.addEventListener('click', (e) => {
+        e.stopPropagation();
         audio.init();
-        const on = audio.toggle();
-        const sfxIcon = document.getElementById('sfx-icon');
-        if (sfxIcon) {
-          sfxIcon.textContent = on ? '🔊' : '🔇';
-        } else {
-          btnAudioControl.textContent = on ? '🔊 AUDIO ON' : '🔇 AUDIO OFF';
-        }
-        btnAudioControl.title = on ? '戰術音效：開啟中 (點擊靜音)' : '戰術音效：已靜音 (點擊開啟)';
-        this.showToast(on ? '🔊 NT-D 戰術音效已開啟' : '🔇 戰術音效已靜音');
+        this.toggleMasterMute();
       });
     }
 
@@ -338,14 +464,22 @@ class TaipeiDebuggerApp {
       });
     }
 
-    // Filter Tabs
+    // Filter Tabs (Right Column & Left Map Legend synchronized)
     document.querySelectorAll('.filter-tab').forEach((tab) => {
       tab.addEventListener('click', (e) => {
         audio.playClick();
-        document.querySelectorAll('.filter-tab').forEach((t) => t.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-        this.currentFilter = e.currentTarget.dataset.filter;
-        this.renderIncidentList();
+        const filterKey = e.currentTarget.dataset.filter || 'all';
+        this.setFilter(filterKey);
+      });
+    });
+
+    // Map Legend Filter Buttons (Left Panel)
+    document.querySelectorAll('#map-legend-bar .legend-item').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        audio.init();
+        audio.playClick();
+        const cat = e.currentTarget.dataset.category || 'all';
+        this.setFilter(cat);
       });
     });
 
@@ -373,6 +507,33 @@ class TaipeiDebuggerApp {
         }
         this.showToast('✅ 工單已成功推播至台北市 1999 派工 API [HTTP 200 OK]');
         this.closeModal();
+      });
+    }
+
+    // Laplace's Box Easter Egg Trigger & Modal Controls
+    const btnLaplace = document.getElementById('btn-laplace-box');
+    if (btnLaplace) {
+      btnLaplace.addEventListener('click', () => {
+        audio.init();
+        this.openLaplaceModal();
+      });
+    }
+
+    const laplaceClose = document.getElementById('laplace-close');
+    const laplaceDismiss = document.getElementById('laplace-dismiss-btn');
+    const laplaceBackdrop = document.getElementById('laplace-backdrop');
+    [laplaceClose, laplaceDismiss, laplaceBackdrop].forEach((el) => {
+      if (el) {
+        el.addEventListener('click', () => {
+          this.closeLaplaceModal();
+        });
+      }
+    });
+
+    const btnAwaken = document.getElementById('btn-awaken-psycho');
+    if (btnAwaken) {
+      btnAwaken.addEventListener('click', () => {
+        this.toggleAwakenMode();
       });
     }
 
@@ -468,7 +629,39 @@ class TaipeiDebuggerApp {
     document.getElementById('map-pin-count').textContent = `${list.length} HOTSPOTS`;
 
     const sectorTag = document.getElementById('rover-sector-tag');
-    if (sectorTag) sectorTag.textContent = this.currentSector.name.split(' (')[0];
+    if (sectorTag) {
+      sectorTag.textContent = this.currentSector.shortName || this.currentSector.name.split(' (')[0];
+    }
+    this.updateMapPinCount();
+  }
+
+  // Unified Filter State Manager (Synchronizes Left Legend & Right Tabs)
+  setFilter(filterKey) {
+    this.currentFilter = filterKey;
+    document.querySelectorAll('.filter-tab').forEach((t) => {
+      t.classList.toggle('active', t.dataset.filter === filterKey);
+    });
+    document.querySelectorAll('#map-legend-bar .legend-item').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.category === filterKey);
+    });
+    this.renderIncidentList();
+    this.updateMapPinCount();
+  }
+
+  updateMapPinCount() {
+    const list = this.activeIncidents;
+    const filtered = list.filter((item) => {
+      if (this.currentFilter === 'all') return true;
+      return item.category === this.currentFilter;
+    });
+    const pinCountEl = document.getElementById('map-pin-count');
+    if (pinCountEl) {
+      if (this.currentFilter === 'all') {
+        pinCountEl.textContent = `${list.length} HOTSPOTS`;
+      } else {
+        pinCountEl.textContent = `${filtered.length}/${list.length} HOTSPOTS`;
+      }
+    }
   }
 
   // Select an Incident to view in Evidence HUD
@@ -606,6 +799,31 @@ class TaipeiDebuggerApp {
     });
   }
 
+  // Coordinate calculation along sector bezier trajectory
+  getRoutePoint(sectorKey, t, w, h) {
+    const config = SECTOR_ROUTES[sectorKey] || SECTOR_ROUTES.dadaocheng;
+    const r = config.river;
+    const offset = config.pathOffset || -20;
+
+    const p0 = { x: r.p0.x * w, y: r.p0.y * h + offset };
+    const p1 = { x: r.p1.x * w, y: r.p1.y * h + offset };
+    const p2 = { x: r.p2.x * w, y: r.p2.y * h + offset };
+    const p3 = { x: r.p3.x * w, y: r.p3.y * h + offset };
+
+    const cx = 3 * (p1.x - p0.x);
+    const bx = 3 * (p2.x - p1.x) - cx;
+    const ax = p3.x - p0.x - cx - bx;
+
+    const cy = 3 * (p1.y - p0.y);
+    const by = 3 * (p2.y - p1.y) - cy;
+    const ay = p3.y - p0.y - cy - by;
+
+    const x = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0.x;
+    const y = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
+
+    return { x, y };
+  }
+
   // Handle Radar Canvas Mouse Hover
   handleRadarMouseMove(e) {
     if (!this.radarCanvas || this.activeIncidents.length === 0) return;
@@ -616,27 +834,12 @@ class TaipeiDebuggerApp {
     const w = this.radarCanvas.width;
     const h = this.radarCanvas.height;
 
-    const p0 = { x: 0, y: h * 0.7 - 20 };
-    const p1 = { x: w * 0.35, y: h * 0.8 - 20 };
-    const p2 = { x: w * 0.65, y: h * 0.2 - 20 };
-    const p3 = { x: w, y: h * 0.3 - 20 };
-
-    const cx = 3 * (p1.x - p0.x);
-    const bx = 3 * (p2.x - p1.x) - cx;
-    const ax = p3.x - p0.x - cx - bx;
-
-    const cy = 3 * (p1.y - p0.y);
-    const by = 3 * (p2.y - p1.y) - cy;
-    const ay = p3.y - p0.y - cy - by;
-
     let foundIdx = -1;
     this.activeIncidents.forEach((item, idx) => {
-      const t = item.routeT || ((idx * 0.18 + 0.1) % 0.9);
-      const px = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0.x;
-      const py = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
-
-      const dist = Math.hypot(mx - px, my - py);
-      if (dist < 14) {
+      const t = item.routeT !== undefined ? item.routeT : ((idx * 0.18 + 0.12) % 0.88);
+      const pt = this.getRoutePoint(this.currentSectorKey, t, w, h);
+      const dist = Math.hypot(mx - pt.x, my - pt.y);
+      if (dist < 15) {
         foundIdx = idx;
       }
     });
@@ -648,8 +851,10 @@ class TaipeiDebuggerApp {
       const item = this.activeIncidents[foundIdx];
       if (popover) {
         popover.classList.remove('hidden');
+        const deptEl = document.getElementById('pop-dept');
+        if (deptEl) deptEl.textContent = `權責：${item.department || '台北市政府'}`;
         document.getElementById('pop-title').textContent = item.title;
-        document.getElementById('pop-meta').textContent = `${item.categoryName} · ${item.mileage} · 置信度 ${item.confidence}`;
+        document.getElementById('pop-meta').textContent = `🎬 錄影時標 ${item.time || '11:24'} · 影格 ${item.frameId || '#01842'} · 里程 ${item.mileage || '0K+850'} · 置信度 ${item.confidence || '95%'}`;
       }
     } else {
       this.radarCanvas.style.cursor = 'default';
@@ -678,8 +883,10 @@ class TaipeiDebuggerApp {
     this.isNtdIgnited = true;
 
     audio.init();
-    audio.playNtdEngage();
-    this.playBgm();
+    if (!this.isMuted) {
+      audio.playNtdEngage();
+      this.playBgm();
+    }
 
     const bootScreen = document.getElementById('ntd-boot-screen');
     if (bootScreen) {
@@ -730,7 +937,9 @@ class TaipeiDebuggerApp {
   dismissBootScreen() {
     const bootScreen = document.getElementById('ntd-boot-screen');
     if (bootScreen) bootScreen.classList.add('fade-out');
-    if (!this.bgmPlaying) this.playBgm();
+    if (!this.isMuted && (!this.bgm || this.bgm.paused)) {
+      this.playBgm();
+    }
   }
 
   triggerBootScreen() {
@@ -794,6 +1003,58 @@ class TaipeiDebuggerApp {
     if (modal) modal.classList.remove('show');
   }
 
+  // Laplace's Box Easter Egg Modal Lifecycle
+  openLaplaceModal() {
+    audio.playLaplaceChime();
+    const modal = document.getElementById('laplace-modal');
+    if (modal) modal.classList.add('show');
+  }
+
+  closeLaplaceModal() {
+    const modal = document.getElementById('laplace-modal');
+    if (modal) modal.classList.remove('show');
+  }
+
+  // Awaken Mode Toggle: Switches Theme to Emerald Green Psycho-Frame
+  toggleAwakenMode() {
+    this.isAwakened = !this.isAwakened;
+    document.body.classList.toggle('awaken-mode', this.isAwakened);
+    audio.playLaplaceChime();
+    this.updateFavicon(this.isAwakened);
+
+    const awakenBtnText = document.getElementById('awaken-btn-text');
+    const resonanceVal = document.getElementById('resonance-val');
+    const resonanceBar = document.getElementById('resonance-meter-bar');
+
+    if (this.isAwakened) {
+      if (awakenBtnText) awakenBtnText.textContent = '🚨 切換回 NT-D 毀滅模式 (RED OVERDRIVE)';
+      if (resonanceVal) resonanceVal.textContent = '300% (AWAKEN)';
+      if (resonanceBar) resonanceBar.style.width = '100%';
+      this.showToast('🌟 精神感應框共鳴率突破 300%！全系統進入【覺醒綠光新人類模式】！');
+    } else {
+      if (awakenBtnText) awakenBtnText.textContent = '🌟 觸發精神感應狂潮 // 覺醒綠光新人類模式';
+      if (resonanceVal) resonanceVal.textContent = '95%';
+      if (resonanceBar) resonanceBar.style.width = '94%';
+      this.showToast('⚡ 系統已切回 NT-D 紅色毀滅模式');
+    }
+  }
+
+  // Dynamic Browser Tab Favicon Switcher (Cyber Cyan vs Awakened Green Unicorn Silhouette)
+  updateFavicon(isAwakened) {
+    const strokeColor = isAwakened ? '%2300ffcc' : '%2300f3ff';
+    const c0 = isAwakened ? '%23e0fffa' : '%23e0faff';
+    const c1 = isAwakened ? '%2334d399' : '%2367e8f9';
+    const c2 = isAwakened ? '%2300ffcc' : '%2300f3ff';
+    const c3 = isAwakened ? '%23059669' : '%230284c7';
+    const unicornPath = 'M 9.6 6 L 24.3 19.5 L 24.7 18.3 L 23.5 14.3 L 23.5 10 L 24.3 12.7 L 29 17.5 L 38.2 19.9 L 44.1 23.5 L 46.1 25.8 L 51.3 35.4 L 55.6 48.1 L 55.6 48.9 L 53.2 50.1 L 52.4 51.3 L 46.1 54.4 L 41.3 56.4 L 34.6 58 L 28.2 57.6 L 23.9 56 L 19.9 53.6 L 19.5 53.2 L 21.1 49.3 L 28.2 38.9 L 28.6 37 L 27 36.6 L 23.1 38.2 L 19.9 40.5 L 17.5 41.3 L 14.7 44.1 L 12.4 43.7 L 9.2 41.7 L 8.4 38.9 L 8.8 36.2 L 17.5 28.6 L 21.1 23.1 L 9.6 6.4 Z';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="%23080e1a"/><stop offset="100%" stop-color="%23020408"/></linearGradient><linearGradient id="unicornGrad" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0%" stop-color="${c0}"/><stop offset="30%" stop-color="${c1}"/><stop offset="70%" stop-color="${c2}"/><stop offset="100%" stop-color="${c3}"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(%23bg)" stroke="%23162032" stroke-width="1.5"/><rect x="5" y="5" width="54" height="54" rx="11" fill="none" stroke="${strokeColor}" stroke-width="0.8" opacity="0.35"/><path d="${unicornPath}" fill="url(%23unicornGrad)"/></svg>`;
+    const dataUri = `data:image/svg+xml;utf8,${svg}`;
+    const link = document.querySelector("link[rel*='icon']");
+    if (link) {
+      link.href = dataUri;
+    }
+  }
+
   // Toast Notification
   showToast(message) {
     const toast = document.getElementById('hud-toast');
@@ -828,15 +1089,72 @@ class TaipeiDebuggerApp {
     });
   }
 
+  // ==========================================================================
+  // MASTER AUDIO & MUTE CONTROLS
+  // ==========================================================================
+  toggleMasterMute() {
+    this.setMasterMute(!this.isMuted);
+  }
+
+  setMasterMute(mute) {
+    this.isMuted = mute;
+    audio.enabled = !mute;
+
+    if (this.bgm) {
+      this.bgm.muted = mute;
+      if (mute) {
+        this.bgm.pause();
+      } else {
+        this.playBgm();
+      }
+    }
+
+    this.updateMuteUi();
+    this.showToast(mute ? '🔇 全系統已靜音 (BGM 與音效已關閉)' : '🔊 系統聲音已恢復');
+  }
+
+  updateMuteUi() {
+    const sfxIcon = document.getElementById('sfx-icon');
+    const btnAudioControl = document.getElementById('btn-audio-control');
+    if (sfxIcon) {
+      sfxIcon.textContent = this.isMuted ? '🔇' : '🔊';
+    }
+    if (btnAudioControl) {
+      btnAudioControl.classList.toggle('muted', this.isMuted);
+      btnAudioControl.title = this.isMuted ? '全系統已靜音 (點擊開啟聲音)' : '全系統靜音 / 聲音開關 (點擊靜音)';
+    }
+
+    const soundIcon = document.getElementById('sound-icon');
+    const soundText = document.getElementById('sound-text');
+    const btnToggleSound = document.getElementById('btn-toggle-sound');
+    if (soundIcon) {
+      soundIcon.textContent = this.isMuted ? '🔇' : '🔊';
+    }
+    if (soundText) {
+      soundText.textContent = this.isMuted ? 'SOUND: OFF' : 'SOUND FX: ON';
+    }
+    if (btnToggleSound) {
+      btnToggleSound.classList.toggle('muted', this.isMuted);
+    }
+
+    if (this.isMuted) {
+      this.updateBgmUi(false);
+    }
+  }
+
   // BGM Player Management
   playBgm() {
-    if (!this.bgm) return;
-    this.bgm.play().then(() => {
-      this.bgmPlaying = true;
-      this.updateBgmUi(true);
-    }).catch((err) => {
-      console.log('Autoplay deferred:', err);
-    });
+    if (!this.bgm || this.isMuted) return;
+    this.bgm.muted = false;
+    const playPromise = this.bgm.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        this.bgmPlaying = true;
+        this.updateBgmUi(true);
+      }).catch((err) => {
+        console.log('Autoplay deferred:', err);
+      });
+    }
   }
 
   pauseBgm() {
@@ -847,11 +1165,16 @@ class TaipeiDebuggerApp {
   }
 
   toggleBgm() {
-    if (this.bgmPlaying) {
+    const isPlaying = this.bgm && !this.bgm.paused;
+    if (isPlaying) {
       this.pauseBgm();
       this.showToast('🔇 BGM 已暫停');
     } else {
-      this.playBgm();
+      if (this.isMuted) {
+        this.setMasterMute(false);
+      } else {
+        this.playBgm();
+      }
       this.showToast('🎵 播放 BGM: UNICORN (澤野弘之)');
     }
   }
@@ -869,7 +1192,7 @@ class TaipeiDebuggerApp {
   }
 
   // ==========================================================================
-  // 5. RADAR & ROUTE CANVAS LOOP (INTERACTIVE HOTSPOT PINS)
+  // 5. OFFLINE TRAJECTORY & MUNICIPAL HEATLINE CANVAS LOOP
   // ==========================================================================
   startRadarLoop() {
     if (!this.radarCtx) return;
@@ -879,12 +1202,12 @@ class TaipeiDebuggerApp {
       const w = this.radarCanvas.width;
       const h = this.radarCanvas.height;
 
-      // Dark background
+      // 1. Dark background
       ctx.fillStyle = '#06080d';
       ctx.fillRect(0, 0, w, h);
 
-      // Grid Lines
-      ctx.strokeStyle = 'rgba(255, 0, 60, 0.1)';
+      // 2. Cyber Coordinate Grid
+      ctx.strokeStyle = 'rgba(255, 0, 60, 0.08)';
       ctx.lineWidth = 1;
       for (let x = 0; x < w; x += 30) {
         ctx.beginPath();
@@ -899,39 +1222,116 @@ class TaipeiDebuggerApp {
         ctx.stroke();
       }
 
-      // River Water Body
+      // 3. Sector-Specific River Water Body
+      const config = SECTOR_ROUTES[this.currentSectorKey] || SECTOR_ROUTES.dadaocheng;
+      const r = config.river;
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(0, 243, 255, 0.35)';
-      ctx.lineWidth = 18;
-      ctx.moveTo(0, h * 0.7);
-      ctx.bezierCurveTo(w * 0.35, h * 0.8, w * 0.65, h * 0.2, w, h * 0.3);
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.28)';
+      ctx.lineWidth = 22;
+      ctx.lineCap = 'round';
+      ctx.moveTo(r.p0.x * w, r.p0.y * h);
+      ctx.bezierCurveTo(r.p1.x * w, r.p1.y * h, r.p2.x * w, r.p2.y * h, r.p3.x * w, r.p3.y * h);
       ctx.stroke();
 
-      // Bike / Patrol Path (Dashed Parallel)
+      // Flowing water ripple stream line
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 0, 60, 0.7)';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([6, 4]);
-      ctx.moveTo(0, h * 0.7 - 20);
-      ctx.bezierCurveTo(w * 0.35, h * 0.8 - 20, w * 0.65, h * 0.2 - 20, w, h * 0.3 - 20);
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.55)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([12, 10]);
+      ctx.lineDashOffset = -(Date.now() * 0.02) % 22;
+      ctx.moveTo(r.p0.x * w, r.p0.y * h);
+      ctx.bezierCurveTo(r.p1.x * w, r.p1.y * h, r.p2.x * w, r.p2.y * h, r.p3.x * w, r.p3.y * h);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Bezier Path Equation Parameters
-      const p0 = { x: 0, y: h * 0.7 - 20 };
-      const p1 = { x: w * 0.35, y: h * 0.8 - 20 };
-      const p2 = { x: w * 0.65, y: h * 0.2 - 20 };
-      const p3 = { x: w, y: h * 0.3 - 20 };
+      // 4. Segmented Health-Trace Quality Trajectory Line
+      // Normal = Cyan/Teal, Moderate Defect = Amber, Severe Defect = Neon Red
+      const numSegments = 32;
+      for (let s = 0; s < numSegments; s++) {
+        const tStart = s / numSegments;
+        const tEnd = (s + 1) / numSegments;
+        const ptA = this.getRoutePoint(this.currentSectorKey, tStart, w, h);
+        const ptB = this.getRoutePoint(this.currentSectorKey, tEnd, w, h);
 
-      const cx = 3 * (p1.x - p0.x);
-      const bx = 3 * (p2.x - p1.x) - cx;
-      const ax = p3.x - p0.x - cx - bx;
+        const midT = (tStart + tEnd) / 2;
+        const nearby = this.activeIncidents.filter(
+          (inc) => Math.abs((inc.routeT !== undefined ? inc.routeT : 0.5) - midT) < 0.06
+        );
 
-      const cy = 3 * (p1.y - p0.y);
-      const by = 3 * (p2.y - p1.y) - cy;
-      const ay = p3.y - p0.y - cy - by;
+        let strokeColor = 'rgba(0, 243, 255, 0.65)';
+        let lineW = 3;
+        let glow = 0;
 
-      // Draw Incident Pins along Path
+        if (nearby.some((i) => i.severity === 'high')) {
+          strokeColor = 'rgba(255, 0, 60, 0.95)';
+          lineW = 4.5;
+          glow = 10;
+        } else if (nearby.length > 0) {
+          strokeColor = 'rgba(255, 159, 28, 0.9)';
+          lineW = 3.8;
+          glow = 6;
+        }
+
+        ctx.beginPath();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = lineW;
+        if (glow > 0) {
+          ctx.shadowColor = strokeColor;
+          ctx.shadowBlur = glow;
+        }
+        ctx.moveTo(ptA.x, ptA.y);
+        ctx.lineTo(ptB.x, ptB.y);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // 5. Start Waypoint & Finish Waypoint Badges
+      const startPt = this.getRoutePoint(this.currentSectorKey, 0.02, w, h);
+      ctx.fillStyle = '#10b981';
+      ctx.shadowColor = '#10b981';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(startPt.x, startPt.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.font = 'bold 8px "Share Tech Mono", monospace';
+      ctx.fillStyle = '#10b981';
+      ctx.fillText('▶ START K0.0', startPt.x + 6, startPt.y + 3);
+
+      const finishPt = this.getRoutePoint(this.currentSectorKey, 0.98, w, h);
+      ctx.fillStyle = '#00f3ff';
+      ctx.shadowColor = '#00f3ff';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.rect(finishPt.x - 3, finishPt.y - 3, 6, 6);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.font = 'bold 8px "Share Tech Mono", monospace';
+      ctx.fillStyle = '#00f3ff';
+      ctx.fillText('■ FINISH', finishPt.x - 42, finishPt.y + 3);
+
+      // 6. Waterfront Landmark Tags along Route
+      if (config.landmarks) {
+        config.landmarks.forEach((lm) => {
+          if (lm.t > 0.1 && lm.t < 0.9) {
+            const pt = this.getRoutePoint(this.currentSectorKey, lm.t, w, h);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pt.x, pt.y - 4);
+            ctx.lineTo(pt.x, pt.y + 4);
+            ctx.stroke();
+
+            ctx.font = '8px "Noto Sans TC", sans-serif';
+            ctx.fillStyle = 'rgba(203, 213, 225, 0.65)';
+            ctx.fillText(`⌖ ${lm.label}`, pt.x - 14, pt.y - 8);
+          }
+        });
+      }
+
+      // 7. Draw Incident Pins along Path
       const catColors = {
         trash: '#ff003c',
         pavement: '#ff9f1c',
@@ -940,37 +1340,75 @@ class TaipeiDebuggerApp {
       };
 
       this.activeIncidents.forEach((item, index) => {
-        const t = item.routeT || ((index * 0.18 + 0.1) % 0.9);
-        const px = ax * Math.pow(t, 3) + bx * Math.pow(t, 2) + cx * t + p0.x;
-        const py = ay * Math.pow(t, 3) + by * Math.pow(t, 2) + cy * t + p0.y;
+        const t = item.routeT !== undefined ? item.routeT : ((index * 0.18 + 0.12) % 0.88);
+        const pt = this.getRoutePoint(this.currentSectorKey, t, w, h);
+        const px = pt.x;
+        const py = pt.y;
 
         const isHovered = this.hoveredPinIndex === index;
         const isSelected = this.selectedIncident && this.selectedIncident.id === item.id;
+        const isFilteredOut = this.currentFilter !== 'all' && item.category !== this.currentFilter;
         const color = catColors[item.category] || '#ff003c';
 
-        // Outer pulsing ring
-        const pulse = Math.sin(Date.now() * 0.005 + index) * 3 + (isSelected ? 7 : 5);
+        ctx.save();
+        if (isFilteredOut) {
+          ctx.globalAlpha = 0.22;
+        }
+
+        // Pulse warning ring (high severity has dual pulse)
+        const isHigh = item.severity === 'high';
+        const pulseSpeed = isHigh ? 0.007 : 0.004;
+        const pulse = Math.sin(Date.now() * pulseSpeed + index) * (isHigh ? 4 : 2.5) + (isSelected ? 7 : 5);
+
         ctx.strokeStyle = color;
         ctx.lineWidth = isSelected ? 2.5 : 1.5;
         ctx.beginPath();
         ctx.arc(px, py, pulse + (isSelected ? 6 : 4), 0, Math.PI * 2);
         ctx.stroke();
 
+        if (isHigh && !isFilteredOut) {
+          ctx.strokeStyle = 'rgba(255, 0, 60, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(px, py, pulse + 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
         // Inner Solid Dot
         ctx.fillStyle = color;
         ctx.shadowColor = color;
-        ctx.shadowBlur = isSelected || isHovered ? 14 : 6;
+        ctx.shadowBlur = (isSelected || isHovered) ? 16 : 8;
         ctx.beginPath();
         ctx.arc(px, py, isSelected ? 6.5 : (isHovered ? 5.5 : 4), 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Anomaly Label Tag for selected
-        if (isSelected) {
-          ctx.fillStyle = '#ffffff';
+        // Anomaly Label Tag with Frame ID when selected or hovered
+        if (isSelected || isHovered) {
+          const tagText = `[${item.id}] ${item.frameId || ''} (${item.mileage || ''})`;
           ctx.font = 'bold 9px "Share Tech Mono", monospace';
-          ctx.fillText(`[${item.id}]`, px - 18, py - 14);
+          const textWidth = ctx.measureText(tagText).width;
+
+          ctx.fillStyle = 'rgba(5, 7, 12, 0.94)';
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.roundRect(px - textWidth / 2 - 5, py - 26, textWidth + 10, 15, 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(tagText, px - textWidth / 2, py - 15);
+
+          // Indicator pointer stem
+          ctx.beginPath();
+          ctx.moveTo(px, py - 11);
+          ctx.lineTo(px, py - 5);
+          ctx.strokeStyle = color;
+          ctx.stroke();
         }
+
+        ctx.restore();
       });
 
       requestAnimationFrame(render);
@@ -1233,7 +1671,13 @@ class TaipeiDebuggerApp {
 
         // Glowing Gradient: Deep Violet -> Fuchsia Pink -> Neon Crimson -> Purple
         const grad = ctx.createLinearGradient(0, y, 0, y + barHeight);
-        if (isIgnited) {
+        if (this.isAwakened) {
+          grad.addColorStop(0, 'rgba(0, 255, 204, 0.08)');
+          grad.addColorStop(0.25, 'rgba(52, 211, 153, 0.85)');
+          grad.addColorStop(0.5, 'rgba(0, 255, 204, 0.98)');
+          grad.addColorStop(0.75, 'rgba(16, 185, 129, 0.88)');
+          grad.addColorStop(1, 'rgba(6, 78, 59, 0.08)');
+        } else if (isIgnited) {
           grad.addColorStop(0, 'rgba(168, 85, 247, 0.08)');
           grad.addColorStop(0.25, 'rgba(217, 70, 239, 0.85)'); // Fuchsia
           grad.addColorStop(0.5, 'rgba(255, 0, 85, 0.98)');   // Blazing Neon Crimson

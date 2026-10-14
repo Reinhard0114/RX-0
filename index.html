@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RX-0 TAIPEI DEBUGGER // NT-D SYSTEM COCKPIT</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" href="favicon.ico">
   
   <!-- Fonts: Orbitron, Rajdhani, Share Tech Mono, Noto Sans TC -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -103,6 +105,9 @@
       <button id="btn-toggle-sound" class="btn-ntd-ghost">
         <span id="sound-icon">🔊</span> <span id="sound-text">SOUND FX: ON</span>
       </button>
+      <button id="btn-fast-pass" class="btn-ntd-ghost btn-fast-pass" title="跳過倒數，秒進駕駛艙 (DEMO 快速通關)">
+        <span>⏩ FAST PASS</span>
+      </button>
     </div>
 
     <div class="boot-audio-prompt blink-red" id="boot-prompt-text">
@@ -186,15 +191,22 @@
           
           <input type="range" id="bgm-volume" min="0" max="1" step="0.05" value="0.6" class="hud-volume-slider" title="BGM 音量調節">
 
-          <button id="btn-audio-control" class="btn-hub-sfx" title="切換戰術音效 (ON/OFF)">
+          <button id="btn-audio-control" class="btn-hub-sfx" title="全系統靜音 / 聲音開關 (ON/OFF)">
             <span id="sfx-icon">🔊</span>
           </button>
         </div>
+
+        <!-- Laplace's Box Easter Egg Button -->
+        <button id="btn-laplace-box" class="btn-laplace-box" title="【機密協定】解鎖拉普拉斯之盒 · 宇宙世紀憲章 第七章 第十五條 第二款">
+          <span class="box-icon">📦</span>
+          <span class="box-label">LAPLACE</span>
+          <span class="box-shimmer"></span>
+        </button>
       </div>
     </header>
 
     <!-- HTML5 Audio Element for Gundam UC BGM -->
-    <audio id="ntd-bgm" src="bgm.mp3" loop preload="auto" autoplay></audio>
+    <audio id="ntd-bgm" src="bgm.mp3" loop preload="auto"></audio>
 
     <!-- Main Grid Layout -->
     <main class="cockpit-grid">
@@ -203,14 +215,14 @@
       <section class="panel-box panel-left">
         <div class="panel-header">
           <span class="panel-tag">[SYS-01]</span>
-          <h2 class="panel-title">河濱路線巡檢地圖 // ROUTE & HOTSPOTS</h2>
+          <h2 class="panel-title">離線推論時空軌跡 // OFFLINE TRAJECTORY</h2>
           <span class="panel-status-dot"></span>
         </div>
 
         <div class="panel-body">
           <!-- River Route Selector -->
           <div class="route-selector-box">
-            <label class="control-label">巡邏路線河段 // PATROL SECTOR</label>
+            <label class="control-label">巡邏稽查河段 // PATROL SECTOR</label>
             <select id="route-select" class="hud-select">
               <option value="dajia">大佳河濱公園段 (基隆河左岸 · 4.2 km)</option>
               <option value="dadaocheng" selected>大稻埕碼頭水岸段 (淡水河右岸 · 3.8 km)</option>
@@ -224,29 +236,41 @@
             <canvas id="radarCanvas" width="400" height="260"></canvas>
             <div class="radar-overlay-cross"></div>
             
-            <!-- Map Pin Hover Popover -->
+            <!-- Map Pin Hover Popover (Keyframe & Evidence Sync) -->
             <div id="map-pin-popover" class="map-pin-popover hidden">
+              <div class="popover-badge" id="pop-dept">權責：環境保護局</div>
               <div class="popover-title" id="pop-title">PIN TITLE</div>
               <div class="popover-meta" id="pop-meta">LAT/LNG</div>
-              <div class="popover-action">點擊定位並檢視舉證 ➔</div>
+              <div class="popover-action">點擊定位影格與 AI 舉證 ➔</div>
             </div>
 
             <div class="radar-coords">
-              <span>SECTOR: <b id="rover-sector-tag">淡水河右岸</b></span>
-              <span>INSPECTION PIN: <b id="map-pin-count">5 HOTSPOTS</b></span>
+              <span>河段: <b id="rover-sector-tag">淡水河右岸</b></span>
+              <span>檢出瑕疵: <b id="map-pin-count">5 HOTSPOTS</b></span>
             </div>
-            <div class="rover-speed-badge">
+            <div class="rover-speed-badge" title="AI 模型離線影像推論稽查完成度">
               <span class="speed-num" id="stat-cov-badge">98.5%</span>
-              <span class="speed-unit">COVERAGE</span>
+              <span class="speed-unit">AUDIT DONE</span>
             </div>
           </div>
 
-          <!-- Map Legend for Anomaly Types -->
-          <div class="map-legend-bar">
-            <span class="legend-item"><span class="legend-dot dot-trash"></span>#02 滿溢垃圾桶</span>
-            <span class="legend-item"><span class="legend-dot dot-pavement"></span>#07 地磚坑洞</span>
-            <span class="legend-item"><span class="legend-dot dot-tree"></span>#01 傾斜路樹</span>
-            <span class="legend-item"><span class="legend-dot dot-hygiene"></span>#03 衛生死角</span>
+          <!-- Map Legend with Interactive Filtering -->
+          <div class="map-legend-bar" id="map-legend-bar">
+            <button class="legend-item active" data-category="all" title="顯示全類別瑕疵">
+              <span class="legend-dot dot-all"></span>全部 (ALL)
+            </button>
+            <button class="legend-item" data-category="trash" title="篩選：環境保護局 (滿溢垃圾桶)">
+              <span class="legend-dot dot-trash"></span>#02 滿溢垃圾桶
+            </button>
+            <button class="legend-item" data-category="pavement" title="篩選：工務局水利處 (地磚坑洞)">
+              <span class="legend-dot dot-pavement"></span>#07 地磚坑洞
+            </button>
+            <button class="legend-item" data-category="tree" title="篩選：公園處 (傾斜路樹)">
+              <span class="legend-dot dot-tree"></span>#01 傾斜路樹
+            </button>
+            <button class="legend-item" data-category="hygiene" title="篩選：環保局 (衛生死角)">
+              <span class="legend-dot dot-hygiene"></span>#03 衛生死角
+            </button>
           </div>
 
           <!-- Mission Telemetry Metrics (Batch Results) -->
@@ -638,6 +662,80 @@
         <button class="btn-hud-primary" id="modal-submit-mock-btn">
           🚀 模擬傳送至台北市 1999 陳情派工系統 (API MOCK)
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 4. MODAL: 拉普拉斯之盒 · 宇宙世紀憲章 第七章 第十五條 第二款彩蛋   -->
+  <!-- ============================================================== -->
+  <div class="hud-modal laplace-modal" id="laplace-modal">
+    <div class="modal-backdrop" id="laplace-backdrop"></div>
+    <div class="modal-dialog laplace-dialog">
+      <div class="laplace-monument-frame">
+        <div class="laplace-header">
+          <div class="laplace-seal-wrap">
+            <span class="laplace-tag">[TOP CLASSIFIED // UC 0096 → TPE 2026]</span>
+            <h2 class="laplace-title">UNIVERSAL CENTURY CHARTER // 宇宙世紀憲章</h2>
+            <div class="laplace-sub">第七章 · 第十五條 · 第二款 // CHAPTER VII · ARTICLE XV, CLAUSE II</div>
+          </div>
+          <button class="modal-close-btn" id="laplace-close">&times;</button>
+        </div>
+
+        <div class="laplace-body">
+          <div class="monument-stone-slab">
+            <div class="slab-badge">✦ 石碑原本刻文 · 第七章 第十五條 第二款 ✦</div>
+            <blockquote class="slab-original-text">
+              「將來，若是確認有適應宇宙環境的新人類（Newtype）誕生，<br>
+              地球聯邦應優先保障其參政權，並將治理權能交予新人類。」
+            </blockquote>
+          </div>
+
+          <div class="monument-declaration">
+            <div class="decl-headline">⚡ 2026 台北市政 DEBUG 實踐宣言：把行政監督權還給市民</div>
+            <p class="decl-lead">
+              如同被聯邦官僚封印了一百年的石碑，市民的聲音與水岸的真實數據，長久以來沉睡在官僚封閉的黑箱公文夾中。<br>
+              <strong>沈伯洋「市長，你給我聽好了」蒐集上千則市民痛點，正是打開拉普拉斯之盒的起點。</strong>
+            </p>
+
+            <blockquote class="decl-quote">
+              「當市民透過公民科技與資訊工具覺醒為<b>『數位新人類』</b>，<br>
+              台北市政府應當毫不猶豫地，將行政監督權與城市治理的權杖，交還給市民。」
+            </blockquote>
+
+            <div class="decl-points">
+              <div class="decl-point">
+                <span class="pt-icon">⬡</span>
+                <div>
+                  <b>開放資料，去黑箱化：</b>
+                  <span>112 公里水岸巡檢影像、瑕疵 GPS、AI 模型置信度 100% 透明公開，讓每位市民都是市政稽查員。</span>
+                </div>
+              </div>
+              <div class="decl-point">
+                <span class="pt-icon">⬡</span>
+                <div>
+                  <b>1999 自動派工管線：</b>
+                  <span>打破官僚推諉，邊緣運算秒級直達環保局、工務局與公園處，讓市民的抱怨在 48 小時內化為工單。</span>
+                </div>
+              </div>
+              <div class="decl-point">
+                <span class="pt-icon">⬡</span>
+                <div>
+                  <b>可能性之神（God of Possibility）：</b>
+                  <span>人心對美好城市的渴望，能跨越光害與泥濘。資訊人動手解題的熱情，終將化為照亮台北未來的虹光。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="laplace-footer">
+          <button class="btn-hud-ghost" id="laplace-dismiss-btn">關閉石碑</button>
+          <button class="btn-awaken-toggle" id="btn-awaken-psycho">
+            <span class="awaken-icon">🌟</span>
+            <span class="awaken-text" id="awaken-btn-text">觸發精神感應狂潮 // 覺醒綠光新人類模式</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
