@@ -268,6 +268,20 @@ class TaipeiDebuggerApp {
     this.currentView = 'tactical';
     this.echartsInstances = {};
 
+    // Preload realistic GoPro evidence photos for HUD camera feed and 1999 ticket modal
+    this.evidenceImages = {};
+    const photoSources = {
+      trash: 'assets/evidence/trash_overflow.jpg',
+      pavement: 'assets/evidence/pavement_crack.jpg',
+      tree: 'assets/evidence/fallen_tree.jpg',
+      hygiene: 'assets/evidence/hygiene_deadzone.jpg'
+    };
+    for (const [cat, src] of Object.entries(photoSources)) {
+      const img = new Image();
+      img.src = src;
+      this.evidenceImages[cat] = img;
+    }
+
     this.init();
   }
 
@@ -993,7 +1007,19 @@ class TaipeiDebuggerApp {
       `${incident.coordinates.lat}° N, ${incident.coordinates.lng}° E (${incident.sectorName} ${incident.mileage || ''})`;
     document.getElementById('modal-ticket-dept').textContent = incident.department;
     document.getElementById('modal-ticket-action').textContent = incident.suggestedAction;
-    document.getElementById('modal-snapshot-img').src = generateSnapshotSvg(incident.category, incident.title, incident.coordinates);
+    
+    // Use high-resolution realistic GoPro evidence photo if available, fallback to procedural SVG
+    const photoMap = {
+      trash: 'assets/evidence/trash_overflow.jpg',
+      pavement: 'assets/evidence/pavement_crack.jpg',
+      tree: 'assets/evidence/fallen_tree.jpg',
+      hygiene: 'assets/evidence/hygiene_deadzone.jpg'
+    };
+    const realPhotoSrc = incident.evidencePhoto || photoMap[incident.category];
+    const snapshotEl = document.getElementById('modal-snapshot-img');
+    if (snapshotEl) {
+      snapshotEl.src = realPhotoSrc || generateSnapshotSvg(incident.category, incident.title, incident.coordinates);
+    }
 
     modal.classList.add('show');
   }
@@ -1430,180 +1456,135 @@ class TaipeiDebuggerApp {
       const w = this.cameraCanvas.width;
       const h = this.cameraCanvas.height;
 
-      // 1. Cyber Twilight Sky Background
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.58);
-      skyGrad.addColorStop(0, '#0a0d18');
-      skyGrad.addColorStop(0.5, '#1e0c24');
-      skyGrad.addColorStop(1, '#52132b');
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, w, h * 0.58);
-
-      // Digital Noise / Star Points
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-      for (let i = 0; i < 15; i++) {
-        const sx = (i * 43) % w;
-        const sy = (i * 23) % (h * 0.4);
-        ctx.fillRect(sx, sy, 1.5, 1.5);
-      }
-
-      // 2. Taipei Skyline & Bridges
-      ctx.fillStyle = '#0e121e';
-      ctx.beginPath();
-      ctx.moveTo(0, h * 0.58);
-      ctx.lineTo(0, h * 0.50);
-      ctx.lineTo(50, h * 0.50);
-      ctx.lineTo(60, h * 0.44);
-      ctx.lineTo(110, h * 0.44);
-      ctx.lineTo(120, h * 0.52);
-      ctx.lineTo(170, h * 0.52);
-      ctx.lineTo(175, h * 0.38);
-      ctx.lineTo(205, h * 0.38);
-      ctx.lineTo(210, h * 0.54);
-      // Taipei 101 Structure
-      ctx.lineTo(250, h * 0.54);
-      ctx.lineTo(255, h * 0.28);
-      ctx.lineTo(258, h * 0.18);
-      ctx.lineTo(262, h * 0.54);
-      // Bridge Span
-      ctx.lineTo(320, h * 0.54);
-      ctx.lineTo(380, h * 0.36);
-      ctx.lineTo(440, h * 0.54);
-      ctx.lineTo(w, h * 0.54);
-      ctx.lineTo(w, h * 0.58);
-      ctx.fill();
-
-      // Bridge Cable Lines
-      ctx.strokeStyle = 'rgba(255, 0, 60, 0.3)';
-      ctx.lineWidth = 1;
-      for (let c = 330; c <= 430; c += 18) {
-        ctx.beginPath();
-        ctx.moveTo(380, h * 0.36);
-        ctx.lineTo(c, h * 0.54);
-        ctx.stroke();
-      }
-
-      // 3. Riverside Waterway (Left)
-      const riverGrad = ctx.createLinearGradient(0, h * 0.58, 0, h);
-      riverGrad.addColorStop(0, '#0c1a2e');
-      riverGrad.addColorStop(1, '#050c18');
-      ctx.fillStyle = riverGrad;
-      ctx.fillRect(0, h * 0.58, w * 0.36, h * 0.42);
-
-      // Water Ripple Lines
-      ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
-      ctx.lineWidth = 1;
-      for (let r = 0; r < 4; r++) {
-        const ry = h * 0.64 + r * 16;
-        ctx.beginPath();
-        ctx.moveTo(10, ry);
-        ctx.lineTo(w * 0.32, ry);
-        ctx.stroke();
-      }
-
-      // 4. Riverside Bike Path (Center to Right)
-      const pathGrad = ctx.createLinearGradient(0, h * 0.58, 0, h);
-      pathGrad.addColorStop(0, '#242b3d');
-      pathGrad.addColorStop(1, '#0f1420');
-      ctx.fillStyle = pathGrad;
-      ctx.beginPath();
-      ctx.moveTo(w * 0.34, h * 0.58);
-      ctx.lineTo(w * 0.95, h * 0.58);
-      ctx.lineTo(w * 1.25, h);
-      ctx.lineTo(w * 0.15, h);
-      ctx.fill();
-
-      // Road Center Divider
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(w * 0.62, h * 0.58);
-      ctx.lineTo(w * 0.68, h);
-      ctx.stroke();
-
-      // 5. Render Selected Anomaly Evidence Subject
       const activeItem = this.selectedIncident || this.activeIncidents[0];
       const targetCategory = activeItem ? activeItem.category : 'trash';
+      const realImg = this.evidenceImages ? this.evidenceImages[targetCategory] : null;
+      const isPhotoReady = realImg && realImg.complete && realImg.naturalWidth > 0;
 
-      ctx.save();
-      ctx.translate(w * 0.62, h * 0.76);
+      if (isPhotoReady) {
+        // A. Draw High-Res GoPro Field Evidence Photo
+        ctx.drawImage(realImg, 0, 0, w, h);
 
-      if (targetCategory === 'trash') {
-        // Trash Can
-        ctx.fillStyle = '#1e293b';
-        ctx.strokeStyle = '#ff003c';
-        ctx.lineWidth = 2.5;
-        ctx.fillRect(-28, -50, 56, 65);
-        ctx.strokeRect(-28, -50, 56, 65);
-        // Overflowing Trash
-        ctx.fillStyle = '#f8fafc';
-        ctx.beginPath();
-        ctx.arc(-10, -60, 16, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#ff5722';
-        ctx.beginPath();
-        ctx.arc(12, -58, 14, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (targetCategory === 'pavement') {
-        // Pavement crack / pothole
-        ctx.strokeStyle = '#ff9f1c';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(-50, -10);
-        ctx.lineTo(-20, 10);
-        ctx.lineTo(15, -5);
-        ctx.lineTo(45, 15);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(255, 159, 28, 0.35)';
-        ctx.fillRect(-40, -15, 80, 30);
-      } else if (targetCategory === 'tree') {
-        // Tilted Tree Trunk
+        // Cyber Scanlines & Vignette Filter
+        ctx.fillStyle = 'rgba(10, 15, 25, 0.22)';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+        for (let y = 0; y < h; y += 4) {
+          ctx.fillRect(0, y, w, 1.5);
+        }
+
+        // B. Dynamic YOLO Detection Bounding Box based on scenario
+        let bx, by, bw, bh;
+        if (targetCategory === 'trash') {
+          bx = w * 0.44; by = h * 0.35; bw = 145; bh = 175;
+        } else if (targetCategory === 'pavement') {
+          bx = w * 0.34; by = h * 0.52; bw = 210; bh = 120;
+        } else if (targetCategory === 'tree') {
+          bx = w * 0.24; by = h * 0.26; bw = 260; bh = 170;
+        } else {
+          bx = w * 0.35; by = h * 0.42; bw = 190; bh = 150;
+        }
+
+        const boxColor = targetCategory === 'trash' ? '#ff003c' : (targetCategory === 'pavement' ? '#ff9f1c' : (targetCategory === 'tree' ? '#2ec4b6' : '#b5179e'));
+        
         ctx.save();
-        ctx.rotate(0.32); // 18 degree tilt
-        ctx.fillStyle = '#8d6e63';
-        ctx.fillRect(-8, -90, 16, 100);
-        ctx.fillStyle = '#2ec4b6';
-        ctx.beginPath();
-        ctx.arc(0, -95, 35, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.strokeStyle = boxColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bx, by, bw, bh);
+
+        // Corner Brackets
+        ctx.fillStyle = boxColor;
+        const cornerLen = 14;
+        const thick = 3;
+        ctx.fillRect(bx, by, cornerLen, thick);
+        ctx.fillRect(bx, by, thick, cornerLen);
+        ctx.fillRect(bx + bw - cornerLen, by, cornerLen, thick);
+        ctx.fillRect(bx + bw - thick, by, thick, cornerLen);
+        ctx.fillRect(bx, by + bh - thick, cornerLen, thick);
+        ctx.fillRect(bx, by + bh - cornerLen, thick, cornerLen);
+        ctx.fillRect(bx + bw - cornerLen, by + bh - thick, cornerLen, thick);
+        ctx.fillRect(bx + bw - thick, by + bh - cornerLen, thick, cornerLen);
+
+        // Floating AI Tag Header
+        ctx.fillStyle = boxColor;
+        ctx.fillRect(bx, by - 19, bw, 19);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 10px "Share Tech Mono", monospace';
+        const labelText = activeItem ? `${activeItem.categoryName || targetCategory} [${activeItem.confidence || '95.2%'}]` : `AI LOCK [95%]`;
+        ctx.fillText(labelText.substring(0, 24), bx + 4, by - 5);
         ctx.restore();
+
       } else {
-        // Hygiene hotspot / rodent symbol
-        ctx.fillStyle = '#374151';
+        // Fallback: Cyber Twilight Skyline Vector Scene
+        // 1. Cyber Twilight Sky Background
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.58);
+        skyGrad.addColorStop(0, '#0a0d18');
+        skyGrad.addColorStop(0.5, '#1e0c24');
+        skyGrad.addColorStop(1, '#52132b');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, w, h * 0.58);
+
+        // Digital Noise / Star Points
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+        for (let i = 0; i < 15; i++) {
+          const sx = (i * 43) % w;
+          const sy = (i * 23) % (h * 0.4);
+          ctx.fillRect(sx, sy, 1.5, 1.5);
+        }
+
+        // 2. Taipei Skyline & Bridges
+        ctx.fillStyle = '#0e121e';
         ctx.beginPath();
-        ctx.ellipse(0, 0, 40, 22, 0, 0, Math.PI * 2);
+        ctx.moveTo(0, h * 0.58);
+        ctx.lineTo(0, h * 0.50);
+        ctx.lineTo(50, h * 0.50);
+        ctx.lineTo(60, h * 0.44);
+        ctx.lineTo(110, h * 0.44);
+        ctx.lineTo(120, h * 0.52);
+        ctx.lineTo(170, h * 0.52);
+        ctx.lineTo(175, h * 0.38);
+        ctx.lineTo(205, h * 0.38);
+        ctx.lineTo(210, h * 0.54);
+        ctx.lineTo(250, h * 0.54);
+        ctx.lineTo(255, h * 0.28);
+        ctx.lineTo(258, h * 0.18);
+        ctx.lineTo(262, h * 0.54);
+        ctx.lineTo(320, h * 0.54);
+        ctx.lineTo(380, h * 0.36);
+        ctx.lineTo(440, h * 0.54);
+        ctx.lineTo(w, h * 0.54);
+        ctx.lineTo(w, h * 0.58);
         ctx.fill();
-        ctx.fillStyle = '#b5179e';
+
+        // 3. Riverside Waterway
+        const riverGrad = ctx.createLinearGradient(0, h * 0.58, 0, h);
+        riverGrad.addColorStop(0, '#0c1a2e');
+        riverGrad.addColorStop(1, '#050c18');
+        ctx.fillStyle = riverGrad;
+        ctx.fillRect(0, h * 0.58, w * 0.36, h * 0.42);
+
+        // 4. Riverside Bike Path
+        const pathGrad = ctx.createLinearGradient(0, h * 0.58, 0, h);
+        pathGrad.addColorStop(0, '#242b3d');
+        pathGrad.addColorStop(1, '#0f1420');
+        ctx.fillStyle = pathGrad;
         ctx.beginPath();
-        ctx.arc(28, -5, 5, 0, Math.PI * 2);
+        ctx.moveTo(w * 0.34, h * 0.58);
+        ctx.lineTo(w * 0.95, h * 0.58);
+        ctx.lineTo(w * 1.25, h);
+        ctx.lineTo(w * 0.15, h);
         ctx.fill();
+
+        // 5. Render Selected Anomaly Subject
+        ctx.save();
+        ctx.translate(w * 0.62, h * 0.76);
+        const boxColor = targetCategory === 'trash' ? '#ff003c' : (targetCategory === 'pavement' ? '#ff9f1c' : (targetCategory === 'tree' ? '#2ec4b6' : '#b5179e'));
+        ctx.strokeStyle = boxColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-55, -95, 110, 125);
+        ctx.restore();
       }
-
-      // YOLO Bounding Box & Annotations
-      const boxColor = targetCategory === 'trash' ? '#ff003c' : (targetCategory === 'pavement' ? '#ff9f1c' : (targetCategory === 'tree' ? '#2ec4b6' : '#b5179e'));
-      ctx.strokeStyle = boxColor;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-55, -95, 110, 125);
-
-      // Corner Brackets
-      ctx.fillStyle = boxColor;
-      ctx.fillRect(-55, -95, 12, 3);
-      ctx.fillRect(-55, -95, 3, 12);
-      ctx.fillRect(43, -95, 12, 3);
-      ctx.fillRect(52, -95, 3, 12);
-      ctx.fillRect(-55, 27, 12, 3);
-      ctx.fillRect(-55, 18, 3, 12);
-      ctx.fillRect(43, 27, 12, 3);
-      ctx.fillRect(52, 18, 3, 12);
-
-      // Floating AI Tag Header
-      ctx.fillStyle = boxColor;
-      ctx.fillRect(-55, -112, 110, 17);
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 9px "Share Tech Mono", monospace';
-      const confText = activeItem ? `${activeItem.categoryName.substring(0, 6)} ${activeItem.confidence}` : 'AI LOCK 94%';
-      ctx.fillText(confText, -52, -100);
-
-      ctx.restore();
 
       // Static watermark
       ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';

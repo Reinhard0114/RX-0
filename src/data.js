@@ -1,7 +1,57 @@
 /**
+ * ============================================================================
  * RX-0 TAIPEI DEBUGGER // CIVIC INSPECTION DATABASE & FAKE DATA ENGINE
- * Contains: SECTORS, INCIDENT_TEMPLATES, Procedural SVG Generator, and
- * Multi-Sector Multi-Date Dataset (2026-10-14, 2026-10-13, 2026-10-12, 2026-10-11, 2026-10-10)
+ * ============================================================================
+ * 
+ * 📄 模組說明：
+ * 本檔案定義了台北河岸巡檢系統之巡檢河段 (SECTORS)、市政痛點模板 (INCIDENT_TEMPLATES)、
+ * 離線影像批次分析資料庫 (PRESET_INSPECTIONS) 與 SVG 舉證產生器。
+ * 採用 IIFE 模組化封裝，資料掛載於 `window.RX0_DATA`，與前端 UI 邏輯 (`app.js`) 徹底解耦。
+ * 
+ * ----------------------------------------------------------------------------
+ * 📑 資料結構定義 (DATA SCHEMAS)
+ * ----------------------------------------------------------------------------
+ * 
+ * 1. SECTOR SCHEMA (巡檢河段物件):
+ *    @property {string} key           - 河段唯一標識碼 (e.g. 'dadaocheng', 'dajia')
+ *    @property {string} name          - 完整河段名稱 (e.g. '大稻埕碼頭水岸段 (淡水河右岸 · 3.8 km)')
+ *    @property {string} shortName     - 短名稱，用於圖表軸與標籤 (e.g. '大稻埕水岸')
+ *    @property {Object} center        - 河段中心 GPS 基準點 { lat: number, lng: number }
+ *    @property {number} deltaLat      - 緯度偏移半徑 (用於雷達畫布座標縮放)
+ *    @property {number} deltaLng      - 經度偏移半徑 (用於雷達畫布座標縮放)
+ *    @property {string} distanceKm    - 河段總里程長度 (e.g. '3.8 km')
+ *    @property {string} framesCount   - 影像總影格數 (e.g. '3,420 F')
+ *    @property {string} coverage      - 巡邏覆蓋率 (e.g. '98.5%')
+ * 
+ * 2. INCIDENT / INSPECTION RECORD SCHEMA (巡檢異常紀錄物件):
+ *    @property {string} id            - 案件通報編號 (格式: 'TPE-YYYY-XXXX', e.g. 'TPE-2026-0891')
+ *    @property {string} date          - 巡檢日期 (YYYY-MM-DD, e.g. '2026-10-14')
+ *    @property {string} time          - 影格偵測時間 (HH:mm:ss, e.g. '11:24:18')
+ *    @property {string} sectorKey     - 所屬河段鍵值 (對應 SECTORS 中的 key)
+ *    @property {string} sectorName    - 所屬河段名稱
+ *    @property {string} category      - 異常類型分類碼 ('trash' | 'pavement' | 'tree' | 'hygiene')
+ *    @property {string} categoryName  - 政策分類標籤 (e.g. '#02 消失的垃圾桶')
+ *    @property {string} title         - 異常事件標題與現場特徵描述
+ *    @property {string} severity      - 嚴重度評級 ('high' | 'medium' | 'low')
+ *    @property {string} department    - 建議權責派工局處 (e.g. '環境保護局 大同清潔隊')
+ *    @property {string} suggestedAction- 建議現場處置或改善方案
+ *    @property {Object} coordinates   - 異常地點經緯度 { lat: number, lng: number }
+ *    @property {string} mileage       - 步道里程樁號定位 (e.g. '0K+850', '2K+150')
+ *    @property {string} confidence    - AI 辨識置信度 (e.g. '95.4%')
+ *    @property {string} frameId       - 對應影片影格編號 (關聯 GPS 遙測軌道之主鍵, e.g. '#01842')
+ *    @property {number} routeT        - 路線相對位置進度 (0.0 ~ 1.0, 用於雷達地圖熱點繪製)
+ *    @property {string} status        - 派工狀態 ('pending' 待審核 | 'dispatched' 已派發 1999)
+ * 
+ * 3. TEMPLATE SCHEMA (自訂異常注入模板):
+ *    @property {string} title         - 模板預設標題
+ *    @property {string} category      - 分類別代碼
+ *    @property {string} categoryName  - 政策痛點分類標籤
+ *    @property {string} severity      - 預設嚴重度
+ *    @property {string} department    - 權責主管單位
+ *    @property {string} suggestedAction- 處置建議
+ *    @property {string} color         - HUD 主題色彩 (Hex)
+ *    @property {string} svgIcon       - 圖示標籤
+ * ============================================================================
  */
 (function () {
   'use strict';
