@@ -282,6 +282,14 @@ class TaipeiDebuggerApp {
       this.evidenceImages[cat] = img;
     }
 
+    // OpenStreetMap Real-world GIS Integration (CartoDB Dark Matter)
+    this.mapViewMode = 'radar'; // 'radar' | 'osm'
+    this.osmMap = null;
+    this.osmMarkers = [];
+    this.osmRouteLine = null;
+    window.app = this;
+    window.rx0App = this;
+
     this.init();
   }
 
@@ -380,6 +388,24 @@ class TaipeiDebuggerApp {
       });
     }
 
+    // Map View Mode Switcher (RADAR vs OSM Real GIS)
+    const btnModeRadar = document.getElementById('btn-mode-radar');
+    const btnModeOsm = document.getElementById('btn-mode-osm');
+    if (btnModeRadar && btnModeOsm) {
+      btnModeRadar.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try { audio.playClick(); } catch (_) {}
+        this.setMapMode('radar');
+      });
+      btnModeOsm.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try { audio.playClick(); } catch (_) {}
+        this.setMapMode('osm');
+      });
+    }
+
     // Sector Selection
     const routeSelect = document.getElementById('route-select');
     if (routeSelect) {
@@ -388,6 +414,10 @@ class TaipeiDebuggerApp {
         this.currentSectorKey = e.target.value;
         this.currentSector = SECTORS[e.target.value] || SECTORS.dadaocheng;
         this.applyFilterAndRefresh();
+        if (this.osmMap) {
+          this.osmMap.flyTo([this.currentSector.center.lat, this.currentSector.center.lng], 14, { duration: 1.2 });
+          this.updateOsmMap();
+        }
         this.showToast(`巡邏河段已切換至：${this.currentSector.name}`);
       });
     }
@@ -598,6 +628,9 @@ class TaipeiDebuggerApp {
 
     // Live update Municipal Analytics ECharts & KPIs with active date/sector filters
     this.updateMunicipalAnalyticsData();
+    if (this.osmMap) {
+      this.updateOsmMap();
+    }
   }
 
   // Render KPI Cards, Progress Bar, and Left Telemetry
@@ -683,6 +716,9 @@ class TaipeiDebuggerApp {
     this.selectedIncident = incident;
     this.updateTargetLockBox(incident);
     this.renderIncidentList();
+    if (this.osmMap && this.mapViewMode === 'osm' && incident && incident.coordinates) {
+      this.osmMap.panTo([incident.coordinates.lat, incident.coordinates.lng], { animate: true, duration: 0.6 });
+    }
   }
 
   // Update Center Camera Targeting HUD Box
@@ -740,6 +776,9 @@ class TaipeiDebuggerApp {
     this.activeIncidents.unshift(newIncident);
     this.selectIncident(newIncident);
     this.renderStatsAndMetrics();
+    if (this.osmMap) {
+      this.updateOsmMap();
+    }
     this.showToast(`🚨 新增測試案例：${newIncident.title.substring(0, 22)}...`);
   }
 
@@ -991,6 +1030,202 @@ class TaipeiDebuggerApp {
         resVal.textContent = `${sync}% CRITICAL`;
       }
     }, 1000);
+  }
+
+  // Realistic GPS River Track Coordinates for OpenStreetMap (CartoDB Dark Matter)
+  static get SECTOR_TRACKS() {
+    return {
+      dadaocheng: [
+        [25.0450, 121.5020],
+        [25.0490, 121.5042],
+        [25.0535, 121.5065],
+        [25.0569, 121.5078],
+        [25.0620, 121.5108],
+        [25.0675, 121.5122],
+        [25.0730, 121.5140]
+      ],
+      dajia: [
+        [25.0690, 121.5200],
+        [25.0715, 121.5265],
+        [25.0735, 121.5310],
+        [25.0742, 121.5348],
+        [25.0752, 121.5420],
+        [25.0740, 121.5490],
+        [25.0710, 121.5560]
+      ],
+      rainbow: [
+        [25.0480, 121.5610],
+        [25.0515, 121.5660],
+        [25.0540, 121.5710],
+        [25.0551, 121.5742],
+        [25.0575, 121.5810],
+        [25.0592, 121.5875],
+        [25.0580, 121.5940]
+      ],
+      guandu: [
+        [25.1120, 121.4560],
+        [25.1160, 121.4610],
+        [25.1195, 121.4650],
+        [25.1225, 121.4682],
+        [25.1265, 121.4728],
+        [25.1305, 121.4775],
+        [25.1340, 121.4830]
+      ]
+    };
+  }
+
+  // Switch between Radar Dynamic Geometry and OpenStreetMap Real GIS View
+  setMapMode(mode) {
+    this.mapViewMode = mode;
+    const btnRadar = document.getElementById('btn-mode-radar');
+    const btnOsm = document.getElementById('btn-mode-osm');
+    const radarCanvas = document.getElementById('radarCanvas');
+    const osmContainer = document.getElementById('osmMapContainer');
+    const radarCross = document.getElementById('radar-cross');
+    const pinPopover = document.getElementById('map-pin-popover');
+
+    try {
+      if (mode === 'osm') {
+        if (btnRadar) btnRadar.classList.remove('active');
+        if (btnOsm) btnOsm.classList.add('active');
+        if (radarCanvas) radarCanvas.style.display = 'none';
+        if (radarCross) radarCross.style.display = 'none';
+        if (pinPopover) pinPopover.classList.add('hidden');
+        if (osmContainer) osmContainer.classList.remove('hidden');
+
+        if (!this.osmMap) {
+          this.initOsmMap();
+        } else {
+          setTimeout(() => {
+            if (this.osmMap) {
+              this.osmMap.invalidateSize();
+              this.updateOsmMap();
+            }
+          }, 80);
+        }
+        this.showToast('🗺️ 已切換至 OpenStreetMap 實景地理圖資 (CartoDB Dark)');
+      } else {
+        if (btnRadar) btnRadar.classList.add('active');
+        if (btnOsm) btnOsm.classList.remove('active');
+        if (radarCanvas) radarCanvas.style.display = 'block';
+        if (radarCross) radarCross.style.display = 'block';
+        if (osmContainer) osmContainer.classList.add('hidden');
+        this.showToast('🛰️ 已切換至戰術雷達動態幾何視圖');
+      }
+    } catch (err) {
+      console.error('Error in setMapMode:', err);
+    }
+  }
+
+  // Initialize OpenStreetMap with Leaflet.js and CartoDB Dark Matter tiles
+  initOsmMap() {
+    if (typeof L === 'undefined') {
+      console.warn('Leaflet library not loaded.');
+      this.showToast('⚠️ 地圖引擎載入中，請稍候重試...');
+      return;
+    }
+    const container = document.getElementById('osmMapContainer');
+    if (!container) return;
+
+    try {
+      this.osmMap = L.map('osmMapContainer', {
+        center: [this.currentSector.center.lat, this.currentSector.center.lng],
+        zoom: 14,
+        zoomControl: true,
+        attributionControl: true
+      });
+
+      // CartoDB Dark Matter tile layer (based on OpenStreetMap data, free & dark styled)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/" target="_blank">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(this.osmMap);
+
+      setTimeout(() => {
+        if (this.osmMap) {
+          this.osmMap.invalidateSize();
+          this.updateOsmMap();
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Leaflet init error:', err);
+    }
+  }
+
+  // Render Route Polyline & Incident Hotspots on OpenStreetMap
+  updateOsmMap() {
+    if (!this.osmMap) return;
+
+    try {
+      // 1. Clear existing markers
+      this.osmMarkers.forEach((m) => m.remove());
+      this.osmMarkers = [];
+
+      // 2. Draw or Update River Track Polyline
+      const tracks = TaipeiDebuggerApp.SECTOR_TRACKS[this.currentSectorKey] || TaipeiDebuggerApp.SECTOR_TRACKS.dadaocheng;
+      if (this.osmRouteLine) {
+        this.osmRouteLine.setLatLngs(tracks);
+      } else {
+        this.osmRouteLine = L.polyline(tracks, {
+          color: '#00f3ff',
+          weight: 3.5,
+          opacity: 0.85,
+          dashArray: '8, 6',
+          lineCap: 'round'
+        }).addTo(this.osmMap);
+      }
+
+      // 3. Render Incident Hotspot Markers
+      const emojiMap = { trash: '🗑️', pavement: '⚠️', tree: '🌳', hygiene: '🐀' };
+      const filteredList = this.activeIncidents.filter((item) => {
+        if (this.currentFilter === 'all') return true;
+        return item.category === this.currentFilter;
+      });
+
+      filteredList.forEach((incident) => {
+        const emoji = emojiMap[incident.category] || '⚠️';
+        const customIcon = L.divIcon({
+          className: `custom-osm-pin pin-${incident.category}`,
+          html: `<div class="osm-pin-circle"><span class="osm-pin-emoji">${emoji}</span><div class="osm-pin-pulse"></div></div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+          popupAnchor: [0, -14]
+        });
+
+        const marker = L.marker([incident.coordinates.lat, incident.coordinates.lng], { icon: customIcon })
+          .addTo(this.osmMap);
+
+        const popupHtml = `
+          <div class="osm-popup-content">
+            <div class="osm-pop-cat">[${incident.categoryName}]</div>
+            <div class="osm-pop-title">${incident.title}</div>
+            <div class="osm-pop-meta">${incident.coordinates.lat.toFixed(4)}°N, ${incident.coordinates.lng.toFixed(4)}°E (${incident.mileage || ''})</div>
+            <div class="osm-pop-badge">置信度: ${incident.confidence} | 嚴重度: ${incident.severity.toUpperCase()}</div>
+            <button class="btn-osm-inspect" onclick="window.app && window.app.selectIncidentAndInspect('${incident.id}')">查看 AI 舉證與派工 ➔</button>
+          </div>
+        `;
+        marker.bindPopup(popupHtml);
+
+        marker.on('click', () => {
+          try { audio.playClick(); } catch (_) {}
+          this.selectIncident(incident);
+        });
+
+        this.osmMarkers.push(marker);
+      });
+    } catch (err) {
+      console.error('updateOsmMap error:', err);
+    }
+  }
+
+  // Helper called from OSM popup button to select defect and open dispatch ticket modal
+  selectIncidentAndInspect(id) {
+    const inc = this.activeIncidents.find((i) => i.id === id);
+    if (inc) {
+      this.selectIncident(inc);
+      this.openModal(inc);
+    }
   }
 
   // 1999 Modal Operations

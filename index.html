@@ -15,6 +15,9 @@
   <link rel="stylesheet" href="src/style.css">
   <!-- Apache ECharts for Dark Mecha Municipal Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <!-- Leaflet.js for OpenStreetMap Real-world GIS integration -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="ntd-mode">
   <!-- CRT Scanlines and Cockpit Vignette Overlay -->
@@ -215,7 +218,18 @@
       <section class="panel-box panel-left">
         <div class="panel-header">
           <span class="panel-tag">[SYS-01]</span>
-          <h2 class="panel-title">離線推論時空軌跡 // OFFLINE TRAJECTORY</h2>
+          <h2 class="panel-title">時空軌跡 // TRAJECTORY</h2>
+          
+          <!-- Mode Switcher: Radar Dynamic Geometry vs OpenStreetMap Real View -->
+          <div class="map-view-toggle">
+            <button id="btn-mode-radar" class="btn-map-mode active" onclick="window.app && window.app.setMapMode('radar')" title="切換為戰術雷達動態幾何視圖">
+              <span class="mode-icon">🛰️</span> RADAR
+            </button>
+            <button id="btn-mode-osm" class="btn-map-mode" onclick="window.app && window.app.setMapMode('osm')" title="切換為 OpenStreetMap 實景地理圖資">
+              <span class="mode-icon">🗺️</span> OSM 實景
+            </button>
+          </div>
+
           <span class="panel-status-dot"></span>
         </div>
 
@@ -232,9 +246,13 @@
           </div>
 
           <!-- Radar & Hotspot Map Viewport -->
-          <div class="radar-viewport-wrap">
+          <div class="radar-viewport-wrap" id="map-viewport-wrapper">
             <canvas id="radarCanvas" width="400" height="260"></canvas>
-            <div class="radar-overlay-cross"></div>
+            
+            <!-- OpenStreetMap Real GIS Container (Hidden by default) -->
+            <div id="osmMapContainer" class="osm-map-viewport hidden"></div>
+
+            <div class="radar-overlay-cross" id="radar-cross"></div>
             
             <!-- Map Pin Hover Popover (Keyframe & Evidence Sync) -->
             <div id="map-pin-popover" class="map-pin-popover hidden">

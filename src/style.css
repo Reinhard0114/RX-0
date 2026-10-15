@@ -814,13 +814,61 @@ html, body {
 }
 .panel-title {
   font-family: var(--font-mecha);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
   letter-spacing: 1px;
   color: #fff;
   flex: 1;
   margin-left: 8px;
 }
+
+/* Map Mode Switcher (Radar vs OpenStreetMap) */
+.map-view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(8, 12, 18, 0.95);
+  border: 1px solid rgba(255, 0, 60, 0.35);
+  border-radius: 3px;
+  padding: 2px 4px;
+  margin-right: 10px;
+}
+
+.btn-map-mode {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.8px;
+  padding: 3px 7px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.btn-map-mode:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.btn-map-mode.active {
+  background: linear-gradient(135deg, rgba(255, 0, 60, 0.85), rgba(180, 0, 40, 0.95));
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(255, 0, 60, 0.5);
+}
+
+.ntd-mode-awakened .btn-map-mode.active {
+  background: linear-gradient(135deg, rgba(0, 255, 204, 0.85), rgba(0, 180, 140, 0.95));
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+  color: #031510;
+}
+
 .panel-status-dot {
   width: 8px;
   height: 8px;
@@ -840,7 +888,7 @@ html, body {
 }
 
 /* ==========================================================================
-   LEFT PANEL: RADAR & RIVER ROUTE
+   LEFT PANEL: RADAR & RIVER ROUTE & OPENSTREETMAP REAL GIS
    ========================================================================== */
 .radar-viewport-wrap {
   position: relative;
@@ -856,6 +904,200 @@ html, body {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* OpenStreetMap GIS Real Viewport */
+.osm-map-viewport {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #06080d;
+  z-index: 2;
+}
+
+.osm-map-viewport.hidden {
+  display: none !important;
+}
+
+/* Leaflet Dark Mecha Theme Overrides */
+.leaflet-container {
+  background: #080d18 !important;
+  font-family: var(--font-mono) !important;
+}
+
+.leaflet-control-zoom {
+  border: 1px solid rgba(255, 0, 60, 0.4) !important;
+  border-radius: 3px !important;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6) !important;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background: rgba(10, 15, 24, 0.92) !important;
+  color: var(--psycho-neon) !important;
+  border-bottom: 1px solid rgba(255, 0, 60, 0.25) !important;
+  width: 24px !important;
+  height: 24px !important;
+  line-height: 24px !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background: rgba(255, 0, 60, 0.3) !important;
+  color: #fff !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(5, 8, 14, 0.75) !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  font-size: 9px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--psycho-neon) !important;
+}
+
+/* Custom OSM Glowing POI Pin Markers */
+.custom-osm-pin {
+  background: transparent;
+  border: none;
+}
+
+.osm-pin-circle {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(12, 16, 26, 0.92);
+  border: 2px solid var(--psycho-neon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px var(--psycho-glow);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.osm-pin-circle:hover {
+  transform: scale(1.22);
+  box-shadow: 0 0 20px var(--psycho-neon);
+}
+
+.osm-pin-emoji {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.osm-pin-pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--psycho-neon);
+  opacity: 0.6;
+  animation: markerPulse 2s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes markerPulse {
+  0% { transform: scale(0.85); opacity: 0.9; }
+  100% { transform: scale(1.65); opacity: 0; }
+}
+
+/* Pin Color Variations */
+.pin-trash .osm-pin-circle { border-color: #ff003c; box-shadow: 0 0 12px rgba(255, 0, 60, 0.6); }
+.pin-trash .osm-pin-pulse { border-color: #ff003c; }
+
+.pin-pavement .osm-pin-circle { border-color: #ff9f1c; box-shadow: 0 0 12px rgba(255, 159, 28, 0.6); }
+.pin-pavement .osm-pin-pulse { border-color: #ff9f1c; }
+
+.pin-tree .osm-pin-circle { border-color: #2ec4b6; box-shadow: 0 0 12px rgba(46, 196, 182, 0.6); }
+.pin-tree .osm-pin-pulse { border-color: #2ec4b6; }
+
+.pin-hygiene .osm-pin-circle { border-color: #b5179e; box-shadow: 0 0 12px rgba(181, 23, 158, 0.6); }
+.pin-hygiene .osm-pin-pulse { border-color: #b5179e; }
+
+/* Leaflet Dark Cyberpunk Popup */
+.leaflet-popup-content-wrapper {
+  background: rgba(10, 14, 22, 0.96) !important;
+  border: 1px solid var(--psycho-neon) !important;
+  border-radius: 4px !important;
+  color: #fff !important;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), 0 0 10px var(--psycho-glow) !important;
+  backdrop-filter: blur(8px) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(10, 14, 22, 0.96) !important;
+  border: 1px solid var(--psycho-neon) !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  font-family: var(--font-mono) !important;
+  line-height: 1.4 !important;
+}
+
+.osm-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 190px;
+}
+
+.osm-pop-cat {
+  font-size: 0.7rem;
+  color: var(--psycho-neon);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.osm-pop-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.osm-pop-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.osm-pop-badge {
+  font-size: 0.68rem;
+  color: #ff9f1c;
+  background: rgba(255, 159, 28, 0.12);
+  padding: 2px 6px;
+  border-radius: 2px;
+  width: fit-content;
+  border: 1px solid rgba(255, 159, 28, 0.3);
+}
+
+.btn-osm-inspect {
+  margin-top: 6px;
+  background: linear-gradient(135deg, rgba(255, 0, 60, 0.8), rgba(180, 0, 40, 0.9));
+  border: 1px solid var(--psycho-neon);
+  color: #fff;
+  font-family: var(--font-mecha);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 6px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.btn-osm-inspect:hover {
+  background: var(--psycho-neon);
+  color: #000;
+  box-shadow: 0 0 10px var(--psycho-neon);
 }
 
 .radar-overlay-cross {
