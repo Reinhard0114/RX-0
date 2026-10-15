@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RX-0 TAIPEI DEBUGGER // NT-D SYSTEM COCKPIT</title>
   <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
   <link rel="alternate icon" href="assets/icons/favicon.ico">
-  
+
   <!-- Fonts: Orbitron, Rajdhani, Share Tech Mono, Noto Sans TC -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="src/style.css">
   <!-- Apache ECharts for Dark Mecha Municipal Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
@@ -19,6 +22,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
+
 <body class="ntd-mode">
   <!-- CRT Scanlines and Cockpit Vignette Overlay -->
   <div class="crt-overlay" aria-hidden="true"></div>
@@ -28,7 +32,7 @@
   <!-- 1. NT-D STARTUP SEQUENCE OVERLAY (UC GUNDAM COCKPIT BOOT)      -->
   <!-- ============================================================== -->
   <div id="ntd-boot-screen" class="ntd-boot-screen">
-    
+
     <!-- Cockpit Space Background Brackets -->
     <div class="cockpit-space-bg" aria-hidden="true">
       <div class="hex-radar-wing wing-left"></div>
@@ -49,7 +53,7 @@
 
       <!-- Monitor Screen Viewport -->
       <div class="monitor-display-area" id="monitor-display">
-        
+
         <!-- Canvas: Dynamic Purple Flame & Equalizer Glitch Streaks -->
         <canvas id="ntd-flame-canvas" class="ntd-flame-canvas" width="860" height="420"></canvas>
 
@@ -123,7 +127,7 @@
   <!-- 2. MAIN COCKPIT HUD INTERFACE (NT-D THEME)                    -->
   <!-- ============================================================== -->
   <div class="cockpit-container" id="main-cockpit">
-    
+
     <!-- Top Cockpit Status Bar (Streamlined & Integrated) -->
     <header class="hud-topbar">
       <!-- 1. Left: Brand Logo as Home Button + Concise Status Tag -->
@@ -191,8 +195,9 @@
             </span>
             <span id="bgm-btn-text">BGM</span>
           </button>
-          
-          <input type="range" id="bgm-volume" min="0" max="1" step="0.05" value="0.6" class="hud-volume-slider" title="BGM 音量調節">
+
+          <input type="range" id="bgm-volume" min="0" max="1" step="0.05" value="0.6" class="hud-volume-slider"
+            title="BGM 音量調節">
 
           <button id="btn-audio-control" class="btn-hub-sfx" title="全系統靜音 / 聲音開關 (ON/OFF)">
             <span id="sfx-icon">🔊</span>
@@ -216,27 +221,34 @@
 
       <!-- LEFT COLUMN: Mission Patrol Map & Route Hotspots -->
       <section class="panel-box panel-left">
-        <div class="panel-header">
-          <span class="panel-tag">[SYS-01]</span>
-          <h2 class="panel-title">時空軌跡 // TRAJECTORY</h2>
-          
-          <!-- Mode Switcher: Radar Dynamic Geometry vs OpenStreetMap Real View -->
-          <div class="map-view-toggle">
-            <button id="btn-mode-radar" class="btn-map-mode active" onclick="window.app && window.app.setMapMode('radar')" title="切換為戰術雷達動態幾何視圖">
-              <span class="mode-icon">🛰️</span> RADAR
-            </button>
-            <button id="btn-mode-osm" class="btn-map-mode" onclick="window.app && window.app.setMapMode('osm')" title="切換為 OpenStreetMap 實景地理圖資">
-              <span class="mode-icon">🗺️</span> OSM 實景
-            </button>
+        <div class="panel-header panel-header-left">
+          <div class="panel-header-title-wrap">
+            <span class="panel-tag">[SYS-01]</span>
+            <h2 class="panel-title">時空軌跡</h2>
           </div>
 
-          <span class="panel-status-dot"></span>
+          <!-- Gundam Cockpit Tactical Mode Switcher (Rocker Selector) -->
+          <div class="cockpit-mode-switcher" id="map-mode-switcher" role="radiogroup" aria-label="MAP SCAN MODE">
+            <button id="btn-mode-radar" class="hud-switch-btn active"
+              onclick="window.app && window.app.setMapMode('radar')" title="戰術雷達動態幾何掃描 (NT-D VECTOR RADAR)">
+              <span class="btn-led"></span>
+              <span class="btn-tag">RADAR</span>
+            </button>
+            <button id="btn-mode-osm" class="hud-switch-btn" onclick="window.app && window.app.setMapMode('osm')"
+              title="ESRI 實景衛星/地理圖資 (GEO TERRAIN)">
+              <span class="btn-led"></span>
+              <span class="btn-tag">TERRAIN</span>
+            </button>
+          </div>
         </div>
 
         <div class="panel-body">
           <!-- River Route Selector -->
           <div class="route-selector-box">
-            <label class="control-label">巡邏稽查河段 // PATROL SECTOR</label>
+            <div class="route-selector-header">
+              <label class="control-label">巡邏稽查河段 // PATROL SECTOR</label>
+              <span class="sector-code-badge" id="sector-code-badge">SEC-02 // DADAOCHENG</span>
+            </div>
             <select id="route-select" class="hud-select">
               <option value="dajia">大佳河濱公園段 (基隆河左岸 · 4.2 km)</option>
               <option value="dadaocheng" selected>大稻埕碼頭水岸段 (淡水河右岸 · 3.8 km)</option>
@@ -245,15 +257,15 @@
             </select>
           </div>
 
-          <!-- Radar & Hotspot Map Viewport -->
+          <!-- Radar & Hotspot Map Viewport (Enlarged for Mecha Cockpit) -->
           <div class="radar-viewport-wrap" id="map-viewport-wrapper">
-            <canvas id="radarCanvas" width="400" height="260"></canvas>
-            
+            <canvas id="radarCanvas" width="400" height="320"></canvas>
+
             <!-- OpenStreetMap Real GIS Container (Hidden by default) -->
             <div id="osmMapContainer" class="osm-map-viewport hidden"></div>
 
             <div class="radar-overlay-cross" id="radar-cross"></div>
-            
+
             <!-- Map Pin Hover Popover (Keyframe & Evidence Sync) -->
             <div id="map-pin-popover" class="map-pin-popover hidden">
               <div class="popover-badge" id="pop-dept">權責：環境保護局</div>
@@ -322,6 +334,40 @@
               </div>
             </div>
           </div>
+
+          <!-- Mission Avionics & Diagnostics Hub (Cockpit Telemetry Link) -->
+          <div class="avionics-status-card">
+            <div class="avionics-header">
+              <div class="avionics-header-left">
+                <span class="avionics-tag">DIAGNOSTICS</span>
+                <span class="avionics-title">航段遙測鏈路 // TELEMETRY LINK</span>
+              </div>
+              <span class="avionics-badge">ONLINE</span>
+            </div>
+            <div class="avionics-stream">
+              <div class="stream-line">
+                <span class="stream-key">RTK-GPS LINK:</span>
+                <span class="stream-val text-green">LOCKED (±0.02m)</span>
+              </div>
+              <div class="stream-line">
+                <span class="stream-key">INFERENCE ENGINE:</span>
+                <span class="stream-val text-cyan">YOLOv10-NTD EDGE BATCH</span>
+              </div>
+              <div class="stream-line">
+                <span class="stream-key">DISPATCH BRIDGE:</span>
+                <span class="stream-val text-yellow">TAIPEI 1999 DIRECT BRIDGE</span>
+              </div>
+            </div>
+            <div class="sector-health-wrap">
+              <div class="health-meta">
+                <span>河段健康度 HEALTH INDEX</span>
+                <span class="health-score" id="sector-health-val">91.4% (GOOD)</span>
+              </div>
+              <div class="health-gauge">
+                <div class="health-fill" id="sector-health-bar" style="width: 91.4%;"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -339,7 +385,7 @@
           <!-- Camera Feed Simulation Canvas -->
           <div class="camera-feed-viewport" id="camera-viewport">
             <canvas id="cameraCanvas" width="640" height="350"></canvas>
-            
+
             <!-- Mecha Targeting Reticle & HUD Overlay Elements -->
             <div class="camera-hud-decorations">
               <div class="cam-corner cam-tl"></div>
@@ -403,7 +449,7 @@
         </div>
 
         <div class="panel-body">
-          
+
           <!-- Analytics KPI Summary Cards (New Feature) -->
           <div class="analytics-kpi-grid">
             <div class="kpi-card kpi-trash">
@@ -491,7 +537,7 @@
     <!-- 2B. MUNICIPAL ANALYTICS VIEW (ECHARTS CITY GOVERNANCE WAR ROOM) -->
     <!-- ============================================================== -->
     <section class="analytics-view-container hidden" id="municipal-analytics-view">
-      
+
       <!-- Top KPI Summary Cards -->
       <div class="analytics-kpi-row">
         <div class="kpi-hud-card">
@@ -549,7 +595,7 @@
 
       <!-- Main ECharts Grid (4 Interactive Charts) -->
       <div class="analytics-charts-grid">
-        
+
         <!-- Chart 1: Category Distribution (Donut / Sunburst) -->
         <div class="chart-panel-box">
           <div class="chart-panel-header">
@@ -607,7 +653,8 @@
       <div class="ticker-label">CIVIC DEBUG PROTOCOL:</div>
       <div class="ticker-marquee">
         <span class="ticker-content">
-          [RX-0 ENGAGED] » 台北市河濱步道 112km 無人巡檢數位化原型 » 影像識別 + GPS 坐標對齊 » 1999 自動派工系統就緒 » 符合沈伯洋政策 #1 #2 #7 痛點解方 » 敬請於 10/24 黑客松現場 DEMO 驗證 »
+          [RX-0 ENGAGED] » 台北市河濱步道 112km 無人巡檢數位化原型 » 影像識別 + GPS 坐標對齊 » 1999 自動派工系統就緒 » 符合沈伯洋政策 #1 #2 #7 痛點解方 » 敬請於 10/24
+          黑客松現場 DEMO 驗證 »
         </span>
       </div>
       <div class="footer-meta">
@@ -763,7 +810,8 @@
 
   <!-- Civic Inspection Database & Fake Data Engine -->
   <script src="src/data.js"></script>
-  <!-- Main Application Controller -->
-  <script src="src/app.js"></script>
+  <!-- Main Application Controller (ES Module) -->
+  <script type="module" src="src/app.js"></script>
 </body>
+
 </html>

@@ -56,10 +56,16 @@ python -m http.server 8088
 ```
 RX-0/
 ├── index.html              # 駕駛艙主頁面入口、NT-D 外框 HUD 與 ECharts 戰情室結構
-├── src/                    # 🎯 前端核心程式碼（Dashboard 相關模組）
-│   ├── app.js              # Web Audio 音效、Canvas 擬真 HUD、雙視圖切換與 ECharts 動態連動
+├── src/                    # 🎯 前端核心程式碼（原生 ES Modules 架構）
+│   ├── app.js              # 核心主控制器 (Rx0DashboardController，跨模組調度與狀態管理)
 │   ├── data.js             # 巡檢資料庫模組（SECTORS, 歷程 Fake Data, JSDoc Schema）
-│   └── style.css           # NT-D 霓虹紫光、螢幕震顫、雙視圖樣式與全域 Utility
+│   ├── style.css           # NT-D 霓虹紫光、螢幕震顫、駕駛艙儀表樣式
+│   └── modules/            # 🚀 解耦子模組
+│       ├── audio.js        # Web Audio 機甲合成音效引擎 (MechaAudioEngine)
+│       ├── routes.js       # 各河段幾何路徑與推論時空軌跡 (SECTOR_ROUTES, SECTOR_TRACKS)
+│       ├── gis.js          # Leaflet + ESRI 雙層高精度暗色地圖控制器 (GisMapController)
+│       ├── analytics.js    # 4 款 ECharts 市政分析圖表 (MunicipalAnalytics)
+│       └── canvas.js       # Canvas 渲染器 (雷達掃描、GoPro 巡檢鏡頭、開機火焰)
 ├── assets/                 # 靜態資源目錄
 │   ├── audio/              # bgm.mp3（澤野弘之《UNICORN》BGM 音訊檔）
 │   ├── evidence/           # 4 大市政痛點 GoPro 擬真巡檢實證照片
