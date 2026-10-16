@@ -2108,30 +2108,239 @@ body.awaken-mode .hud-switch-btn.active .btn-sub {
 }
 
 /* ==========================================================================
-   RESPONSIVENESS
+   RESPONSIVENESS (COMPREHENSIVE RWD ADAPTATION)
    ========================================================================== */
+
+/* 1. Large Laptops / Semi-compact displays (max-width: 1200px) */
 @media (max-width: 1200px) {
   .cockpit-grid {
-    grid-template-columns: 300px 1fr 340px;
+    grid-template-columns: 290px 1fr 330px;
+    gap: 10px;
+  }
+  .hud-topbar {
+    padding: 6px 12px;
+    gap: 10px;
   }
 }
 
+/* 2. Tablets & Medium Screens (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .hud-topbar {
+    flex-wrap: wrap;
+    white-space: normal;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .topbar-left {
+    flex: 1 1 auto;
+    gap: 8px;
+  }
+  .topbar-right {
+    flex: 0 0 auto;
+    gap: 8px;
+  }
+  .topbar-center {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Municipal Analytics War Room - 2x2 KPI & 1-column charts */
+  .analytics-kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .analytics-charts-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .chart-viewport {
+    height: 260px;
+    min-height: 260px;
+  }
+}
+
+/* 3. Small Tablets & Landscape Mobile (max-width: 992px) */
 @media (max-width: 992px) {
   .cockpit-grid {
     grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
+  /* Mobile visual priority: Center Cam/Map first, Incident feed second, Radar third */
+  .cockpit-col-center { order: 1; }
+  .cockpit-col-right  { order: 2; }
+  .cockpit-col-left   { order: 3; }
+
+  /* Camera / Map viewport height on mobile */
+  .viewport-stage {
+    min-height: 340px;
+    height: 48vh;
+    max-height: 480px;
+  }
+
+  /* Quick bug injection buttons: 2x2 grid */
+  .inject-btn-group {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .btn-inject {
+    padding: 8px 6px;
+    font-size: 0.8rem;
+    white-space: normal;
+    text-align: center;
+  }
+
+  /* Boot screen mecha adaptations */
   .ntd-glitch-text {
-    font-size: 5rem;
-    letter-spacing: 6px;
+    font-size: 4.5rem;
+    letter-spacing: 5px;
   }
   .psycho-frame-rings {
-    width: 320px;
-    height: 320px;
+    width: 280px;
+    height: 280px;
   }
-  .ring-outer { width: 300px; height: 300px; }
-  .ring-mid { width: 220px; height: 220px; }
-  .ring-inner { width: 150px; height: 150px; }
+  .ring-outer { width: 260px; height: 260px; }
+  .ring-mid { width: 190px; height: 190px; }
+  .ring-inner { width: 130px; height: 130px; }
+
+  .monitor-bezel-window {
+    width: 95vw;
+    height: auto;
+    min-height: 420px;
+  }
+
   .ticket-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 4. Mobile Phones (max-width: 768px) */
+@media (max-width: 768px) {
+  .cockpit-container {
+    padding: 8px 10px;
+    gap: 10px;
+  }
+
+  /* Topbar brand button compact */
+  .cockpit-badge-btn {
+    padding: 4px 6px;
+    font-size: 0.95rem;
+  }
+  .system-mode-tag {
+    display: none; /* Hide secondary mode tag to prevent wrap */
+  }
+
+  /* View switcher tabs compact */
+  .hud-view-tab {
+    padding: 4px 8px;
+    font-size: 0.78rem;
+  }
+  .hud-view-tab .tab-badge {
+    display: none;
+  }
+
+  /* Clock display hidden on mobile phone */
+  .clock-display {
+    display: none;
+  }
+
+  /* Audio master hub slider compact */
+  .audio-master-hub {
+    gap: 4px;
+    padding: 2px 6px;
+  }
+  .audio-master-hub .hud-volume-slider {
+    width: 45px;
+  }
+
+  /* Hide decorative wings on mobile to prevent blocking central UI */
+  .boot-mecha-wing {
+    display: none;
+  }
+
+  .ntd-brand-wrapper .ntd-logo-sharp {
+    font-size: 3.5rem;
+    letter-spacing: 4px;
+  }
+
+  .boot-action-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .btn-ignite-ntd {
+    font-size: 0.85rem;
+    padding: 10px 16px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* 1999 Dispatch Modal Responsive */
+  .modal-card {
+    width: 95vw;
+    max-height: 88vh;
+    padding: 14px;
+    margin: 10px;
+    overflow-y: auto;
+  }
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .modal-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+  .modal-incident-snapshot {
+    max-height: 180px;
+  }
+}
+
+/* 5. Ultra-compact Phones (max-width: 480px) */
+@media (max-width: 480px) {
+  .topbar-center {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .mission-date-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .mission-date-control .hud-select-date {
+    max-width: 190px;
+    font-size: 0.75rem;
+  }
+  .psycho-sync-meter {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .psycho-sync-meter .meter-bar-wrap {
+    flex: 1;
+    margin: 0 8px;
+  }
+
+  /* KPI Cards single column on tiny screens */
+  .analytics-kpi-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .kpi-number {
+    font-size: 1.7rem;
+  }
+
+  /* Viewport stage height */
+  .viewport-stage {
+    min-height: 290px;
+    height: 40vh;
+  }
+
+  /* Bug inject buttons stacked */
+  .inject-btn-group {
     grid-template-columns: 1fr;
   }
 }
