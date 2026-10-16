@@ -35,7 +35,7 @@
 ## 二、 總體系統架構設計（雲端架構師視點）
 
 本系統採 **邊緣推論（Edge AI）+ 事件驅動（Cloud EDA）+ 現代化戰術座艙（NT-D Cockpit）** 的三層解耦架構。
-為兼顧「**前瞻技術完整度**」與「**市府前期零採購成本**」，硬體與資料管線特別採 **「Phase 1 輕量驗證版（MVP）」** 與 **「Phase 3 未來旗艦版」** 之漸進式雙軌設計：
+為兼顧「**前瞻技術完整度**」與「**市府前期零採購成本**」，硬體與資料管線特別採 **「Phase 1 輕量驗證（MVP） ➔ Phase 2 系統串聯（中台） ➔ Phase 3 前瞻旗艦（研究院）」** 之三階段漸進式演進設計：
 
 ```mermaid
 flowchart TB
@@ -47,6 +47,11 @@ flowchart TB
             GoPro --> EdgePC
             GPMF --> EdgePC
         end
+        subgraph L1_P2["🟡 Phase 2 聯網串聯版 (Day 31-60 · 4G/5G 即時回傳)"]
+            BikeLTE["巡檢載具外掛 4G/5G 輕量圖傳模組"]
+            SyncEdge["邊緣去識別化 + 即時結構化特徵上傳"]
+            BikeLTE --> SyncEdge
+        end
         subgraph L1_P3["🔵 Phase 3 前瞻旗艦版 (Day 61-100 · 北士科台北研究院)"]
             CamP3["4K HDR 光學鏡頭 / 夜視熱像儀"]
             RTK["RTK-GPS 公分級高精度定位"]
@@ -57,6 +62,7 @@ flowchart TB
             LIDAR --> Jetson
         end
         EdgePC --> Anonymize["隱私去識別化處理 (人臉/車牌動態馬賽克)"]
+        SyncEdge --> Anonymize
         Jetson --> Anonymize
         Anonymize --> Inference["瑕疵偵測 / 邊界框 / 置信度計算"]
     end
@@ -66,21 +72,25 @@ flowchart TB
         subgraph L2_P1["🟢 Phase 1 輕量管線 (零伺服器開銷)"]
             P1Bus["輕量 HTTPS / 靜態 JSON 結構檔 (patrol_data.json)"]
         end
+        subgraph L2_P2["🟡 Phase 2 即時串接管線 (標準 API 閘道)"]
+            P2Bus["Cloud API Gateway + 異步佇列 (Redis / SQS)"]
+        end
         subgraph L2_P3["🔵 Phase 3 規模化串流 (百萬級事件)"]
             P3Bus["分散式事件匯流排 (Apache Kafka / MQTT Broker)"]
         end
         Gateway --> P1Bus --> Ingestion["資料管線：影像特徵結構化入庫"]
+        Gateway --> P2Bus --> Ingestion
         Gateway --> P3Bus --> Ingestion
     end
 
-    subgraph Layer3["3. 雲端核心中台 (Cloud Core & Dispatch Engine)"]
+    subgraph Layer3["3. 雲端核心中台 (Cloud Core & Dispatch Engine · Phase 2 核心落地)"]
         Ingestion --> RuleEngine["規則引擎 (嚴重度權重判定)"]
         RuleEngine --> GeoDB["空間地理資料庫 (PostgreSQL + PostGIS)"]
         RuleEngine --> DispatchService["1999 自動派工服務 (RESTful API Adapter)"]
-        DispatchService --> Taipei1999["台北市單一陳情系統 1999 API"]
+        DispatchService --> Taipei1999["台北市單一陳情系統 1999 API Sandbox / 正式機"]
     end
 
-    subgraph Layer4["4. 前端指揮座艙 (Tactical Cockpit & Analytics War Room)"]
+    subgraph Layer4["4. 前端指揮座艙 (Tactical Cockpit & Analytics War Room · Phase 2/3 全局可視化)"]
         Ingestion --> CockpitUI["RX-0 戰術儀表板 (NT-D WebGL / Canvas / ECharts)"]
         CockpitUI --> ViewNav["雙模式視圖切換 (View Switcher)"]
         ViewNav --> RadarHUD["戰術巡檢視圖 (河濱巡邏雷達 / GPS 熱點 / 現場舉證)"]
@@ -89,40 +99,94 @@ flowchart TB
     end
 ```
 
-### 1. 邊緣感知層與漸進式硬體部署策略 (Phase 1 輕量 vs Phase 3 旗艦)
+### 1. 邊緣感知層與漸進式硬體部署策略 (Phase 1 ➔ Phase 2 ➔ Phase 3)
 - **Phase 1（Day 01 - 30 輕量驗證期 · 零硬體採購負擔）**：
   - **既有設備最大化**：不需一開始採購昂貴自駕車，直接在水利處既有巡邏自行車／公務機車龍頭夾裝市售 4K 運動相機（如 GoPro / 行車記錄器）或公務智慧手機。
   - **低成本空間對齊**：利用運動相機內建 18Hz 之 **GPMF 遙測軌道（Telemetry Metadata Track）** 或手機 GPS，將影格時間戳與經緯度毫秒級線性插值對齊，**零額外硬體開銷**即可取得精準之瑕疵座標。
   - **超廣角（Wide 120°）視角覆蓋**：以河濱車道 3~4 公尺寬度，單鏡頭即可 100% 涵蓋鋪面坑洞、左側行道樹木與右側水岸垃圾箱。
   - **輕量資料管線**：以靜態 JSON 結構檔（`patrol_data.json`）進行資料傳輸，不需維運昂貴雲端叢集，伺服器維運費用幾乎為 0。
+- **Phase 2（Day 31 - 60 系統串接期 · 1999 自動派工中台落地）**：
+  - **聯網回傳升級**：於巡邏載具加裝 4G/5G 輕量圖傳物聯網模組或定點 Wi-Fi 站點，巡檢完成後或關鍵高危異常即時自動回傳雲端 API Gateway。
+  - **1999 自動派工閉環**：雲端中台上線 PostgreSQL + PostGIS 空間資料庫，並對接台北市政府「1999 單一陳情系統 API Sandbox」，實現由「AI 辨識 ➔ 人機協同審核 ➔ 跨局處工單試流轉」的數位治理閉環。
+  - **熱點圖資沉澱**：產出第一版台北水岸鋪面品質指數（PCI）與垃圾熱點動態圖資，提供環保局與工務局彈性調度人力。
 - **Phase 3（Day 61 - 100+ 全域旗艦期 · 北士科台北研究院產學先導）**：
   - **旗艦載具升級**：逐步將成熟之辨識演算法移轉至小型專屬無人巡檢車（Rover）與無人機，選配車載專用 **NVIDIA Jetson Orin 邊緣晶片、公分級 RTK-GPS 定位模組、LiDAR 3D 光學測距雷達與夜視熱像儀**。
   - **高併發事件串流**：後端引進 Apache Kafka / MQTT 分散式訊息匯流排，支援全台北市 112 公里河濱數百台車載節點每秒萬級事件吞吐量。
+  - **數位孿生實驗室**：納入北士科台北研究院智慧水岸科技實證基地，整合無人巡檢車與巡檢無人機進行「陸空聯防」自主避障巡弋。
 
-### 2. 資料交換規格 (`patrol_data.json`)
-邊緣端生成之標準事件 JSON 資料結構：
+### 2. 「陸空時空聯防」感知機制：空中宏觀快篩 × 陸地微觀確診 (Air-Ground Co-Inspection)
+
+在河濱水岸巡檢場景中，單純依賴「空中無人機」或「地面巡查車」都會遭遇物理感測局限：
+- **空中無人機（Drone）**：視野廣、飛行快，但**垂直立面深度嚴重不足**，且水岸步道常見的**老樹樹冠、高架橋墩底、遮陽棚立面**會形成物理遮蔽，在數十公尺空中難以穿透辨識橋下地磚裂縫或垃圾桶滿溢比率。
+- **地面巡查車（Rover / 單車）**：具備水平透視深度，能鑽入樹蔭與橋下拍出毫米級微觀細節；但**視線受兩側草叢與護欄阻隔**，且巡查速度慢、無法跨越泥濘的高灘草澤或水體。
+
+因此，RX-0 於 Phase 3 引進 **「空中宏觀初篩 ➔ 陸地微觀確診」的二階時空協同機制**：
+
+| 感測維度 | 🛸 空中無人機（Drone / UAV） | 🚲 地面巡檢車（Rover / 單車） |
+| :--- | :--- | :--- |
+| **觀測視角** | 宏觀正射俯瞰（Bird's-eye View） | 微觀水平透視（Eye-level Perspective） |
+| **感測優勢** | 廣域視野、無視地面阻礙、大面積快篩 | 深度穿透力強、貼地微距細節、解析度達毫米級 |
+| **物理盲區** | **立面遮蔽高**：樹冠下、高架橋孔底、遮陽棚下成盲點 | **範圍受限**：受草叢灌木遮蔽遠方、無法越野下高灘沼澤 |
+| **辨識標的** | 高灘地違法棄置堆、防汛河川水情、整片林帶冠幅枯死 | 透水地磚碎裂、垃圾桶滿溢百分比、護欄螺栓鬆脫、鼠患死角 |
+| **巡檢角色** | **「宏觀快篩與初診」（Triage）** | **「微觀確診與 1999 精準舉證」（Diagnosis）** |
+| **法規因應** | 部署於航高較寬鬆之關渡水鳥段、社子島外側，或災後水防公務緊急申請 | 承擔市區密集、鄰近松山機場限航區之 80% 常態巡檢（大佳段、彩虹段） |
+
+#### 陸空時空協同工作流（Collaborative Workflow）
+1. **空中初篩（Coarse Triage）**：無人機 15 分鐘快掃 5 公里高灘地與河岸水情，AI 檢出可疑大型垃圾或積水熱點，產生粗略經緯度（Coarse POI）推送至事件匯流排。
+2. **中台排程（Event Routing）**：規則引擎將該 POI 標註至地理資料庫，並自動動態插入當日地面巡檢員或無人車的必巡導航路徑點。
+3. **陸地確診（Fine Diagnosis）**：地面車輛行經該地點時，觸發高解析度微距鏡頭與立面光學補光，穿透樹蔭鑽入死角拍攝毫米級特寫，完成 100% 證據力之 1999 自動派工閉環。
+
+### 3. 資料交換規格 (`patrol_data.json`)
+
+前端駕駛艙工具列點擊 **「💾 匯出 patrol_data.json」** 或邊緣端批次產出之標準事件資料結構，與程式碼實作（`data.js` / `app.js`）**100% 嚴謹對齊**：
+
 ```json
 {
-  "incident_id": "TPE-2026-0891",
-  "timestamp": "2026-10-14T01:15:30.000Z",
-  "policy_tag": "#02 找回消失的垃圾桶",
+  "id": "TPE-2026-0891",
+  "date": "2026-10-14",
+  "time": "11:24:18",
+  "sectorKey": "dadaocheng",
+  "sectorName": "大稻埕碼頭水岸段 (淡水河右岸)",
   "category": "trash",
-  "severity": "HIGH",
-  "confidence": 0.948,
-  "gps": {
-    "latitude": 25.04892,
-    "longitude": 121.57124,
-    "heading": 72.0,
-    "sector": "dadaocheng"
+  "categoryName": "#02 找回消失的垃圾桶",
+  "title": "#02 找回消失的垃圾桶：水岸階梯旁垃圾桶滿溢警報",
+  "severity": "high",
+  "department": "環境保護局 大同清潔隊",
+  "suggestedAction": "調派水岸巡邏機車前往清運換膽，加強違規棄置家戶垃圾稽查",
+  "coordinates": {
+    "lat": 25.0569,
+    "lng": 121.5078
   },
-  "snapshot_url": "https://cdn.tpe-debugger.gov.tw/snaps/20261014_0891.jpg",
-  "suggested_department": "台北市政府環境保護局",
-  "recommended_action": "調派大同清潔隊攜帶替換內膽前往清運，加強違規棄置稽查",
-  "policy_100d_meta": "市府上任 100 天現有巡邏車加裝 AI 邊緣鏡頭快速布建計畫"
+  "mileage": "0K+850",
+  "confidence": "95.4%",
+  "frameId": "#01842",
+  "routeT": 0.22,
+  "status": "dispatched"
 }
 ```
 
-### 3. 隱私合規與去識別化機制 (Privacy by Design)
+#### 資料欄位定義規範（Data Dictionary）
+
+| 欄位名稱 (Key) | 資料型態 | 規範說明與範例 | 治理用途 |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | 通報工單編號（格式：`TPE-YYYY-XXXX`，如 `TPE-2026-0891`） | 作為 1999 陳情案件與全流程追蹤之唯一主鍵 (PK) |
+| `date` / `time` | `String` | 巡檢日期 `YYYY-MM-DD` 與影格時間戳 `HH:mm:ss` | 時間維度統計與 GPMF 遙測軌跡精確對齊 |
+| `sectorKey` | `String` | 示範河段唯一識別碼（`dadaocheng`、`dajia`、`rainbow`、`guandu`） | GIS 圖層篩選與權責行政區對齊 |
+| `sectorName` | `String` | 完整河段名稱（如 `大稻埕碼頭水岸段 (淡水河右岸)`） | 前端 HUD 與工單報表人類可讀文字 |
+| `category` | `String` | 瑕疵類別碼（`trash` 垃圾滿溢 \| `pavement` 步道破損 \| `tree` 老樹傾倒 \| `hygiene` 衛生死角） | AI 模型辨識標籤與 ECharts 圓環圖分類 |
+| `categoryName` | `String` | 對應柯/沈市政政策痛點指標（如 `#02 找回消失的垃圾桶`） | 政策達成率與戰情室 KPI 聚合指標 |
+| `title` | `String` | 現場特徵摘要與標題描述 | 1999 工單主旨與現場巡邏員提示 |
+| `severity` | `String` | 嚴重等級（`high` 重大優先處置 \| `medium` 一般追蹤排程 \| `low` 觀察紀錄） | 觸發緊急派工規則與 SLA 處置時限倒數 |
+| `department` | `String` | 建議權責局處（如 `環境保護局 大同清潔隊`、`工務局水利處`） | 1999 自動分派權責單位，免除人工作業延誤 |
+| `suggestedAction` | `String` | AI 處置改善建議 | 提供前線外勤維修工班作業指引 |
+| `coordinates` | `Object` | `{ lat: 25.0569, lng: 121.5078 }` WGS84 經緯度 | OpenStreetMap GIS 圖台釘點與巡航導航 |
+| `mileage` | `String` | 步道里程樁號（如 `0K+850`） | 現場工班實地快速定位比對 |
+| `confidence` | `String` | AI 置信度（如 `95.4%`） | 人機協同審核門檻（>85% 自動標註，>90% 建議直派） |
+| `frameId` | `String` | 影像影格索引編號（如 `#01842`） | 關聯現場舉證相片與影片追溯 |
+| `routeT` | `Number` | 路線歸一化進度純量（`0.0 ~ 1.0`） | 駕駛艙雷達軌跡光點即時插值定位 |
+| `status` | `String` | 工單流轉狀態（`pending` 待審核 \| `dispatched` 已派發 1999） | 派工進度漏斗與 MTTR 修復時長計算 |
+
+### 4. 隱私合規與去識別化機制 (Privacy by Design)
 市政科技落地必須嚴格接受市民檢視與法律規範，本系統從架構底層即落實 **「隱私設計（Privacy by Design）」** 與《個人資料保護法》高規格合規：
 - **邊緣端即時動態去識別化（On-Device Anonymization）**：
   - **人臉動態高斯模糊（Face Blurring）**：針對河岸慢跑、散步市民，邊緣推論引擎於畫面捕捉第一時間即對人臉特徵實施不可逆的像素級高斯模糊處理。
@@ -134,7 +198,7 @@ flowchart TB
   - 系統資料庫內**不包含任何市民身分證號、生物辨識特徵或追蹤紀錄**。
   - 邊緣與雲端中台傳輸全面強制啟用 **TLS 1.3 端到端加密**，API 具備 HMAC-SHA256 數位簽章鑑權防竄改機制，符合 ISO 27001 / 27701 資訊安全及隱私標準。
 
-### 4. 指揮座艙（NT-D 戰術駕駛艙與市政戰報）
+### 5. 指揮座艙（NT-D 戰術駕駛艙與市政戰報）
 - **沉浸式儀表板**：引入鋼彈 UC 獨角獸 NT-D（Newtype Drive）毀滅模式概念，提供操作員宛如機甲座艙的高專注介面。
 - **雙模式戰術導覽（HUD View Switcher）**：
   - **戰術巡檢視圖**：即時呈現河濱路線熱點地圖、現場 AI 截圖舉證、遙測數據與待派工工單列表。
