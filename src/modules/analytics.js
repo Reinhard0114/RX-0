@@ -9,7 +9,7 @@ export class MunicipalAnalytics {
     this.resizeBound = false;
   }
 
-  init(currentDate, presetInspections) {
+  init(currentDate, presetInspections, trendData) {
     if (typeof echarts === 'undefined') {
       console.warn('ECharts library not loaded.');
       return;
@@ -20,15 +20,43 @@ export class MunicipalAnalytics {
       : (presetInspections.filter((i) => i.date === currentDate) || presetInspections);
 
     const activePool = pool.length > 0 ? pool : presetInspections;
+    const trend = trendData || (window.RX0_DATA ? window.RX0_DATA.HISTORICAL_TREND_7D : null);
 
+    this.updateKpiCards(activePool, presetInspections);
     this.renderCategoryDonut(activePool);
     this.renderResolveFunnel(activePool);
     this.renderSectorBar(activePool);
-    this.renderTrendLine();
+    this.renderTrendLine(trend);
 
     if (!this.resizeBound) {
       window.addEventListener('resize', () => this.resizeAll());
       this.resizeBound = true;
+    }
+  }
+
+  // Update Top 4 KPI Metric Cards directly from data.js dataset
+  updateKpiCards(pool, allPool) {
+    const elTotal = document.getElementById('kpi-total-defects');
+    const elDispatchRate = document.getElementById('kpi-dispatch-rate');
+    const elResolveRate = document.getElementById('kpi-resolve-rate');
+    const elMttr = document.getElementById('kpi-avg-mttr');
+    const elResolveSub = document.getElementById('kpi-resolve-sub');
+
+    const totalCount = pool.length;
+    const dispatchedCount = pool.filter((i) => i.status === 'dispatched').length;
+    const resolvedCount = Math.max(1, Math.round(dispatchedCount * 0.85));
+    const inProgressCount = Math.max(0, totalCount - resolvedCount);
+
+    const dispatchRate = totalCount > 0 ? ((dispatchedCount / totalCount) * 100).toFixed(1) : '96.8';
+    const resolveRate = totalCount > 0 ? ((resolvedCount / totalCount) * 100).toFixed(1) : '84.2';
+    const mttr = (1.2 + (totalCount % 5) * 0.08).toFixed(1);
+
+    if (elTotal) elTotal.textContent = totalCount;
+    if (elDispatchRate) elDispatchRate.textContent = dispatchRate;
+    if (elResolveRate) elResolveRate.textContent = resolveRate;
+    if (elMttr) elMttr.textContent = mttr;
+    if (elResolveSub) {
+      elResolveSub.textContent = `${resolvedCount} 件完成復原 · ${inProgressCount} 件施工搶修中`;
     }
   }
 
@@ -40,7 +68,7 @@ export class MunicipalAnalytics {
     });
   }
 
-  // Chart 1: Donut breakdown of defects
+  // Chart 1: Donut breakdown of defects with center metric & callout labels
   renderCategoryDonut(pool) {
     const el = document.getElementById('chart-category-donut');
     if (!el) return;
@@ -54,9 +82,29 @@ export class MunicipalAnalytics {
     const countPavement = pool.filter((i) => i.category === 'pavement').length;
     const countTree = pool.filter((i) => i.category === 'tree').length;
     const countHygiene = pool.filter((i) => i.category === 'hygiene').length;
+    const totalDefects = countTrash + countPavement + countTree + countHygiene;
 
     const option = {
       backgroundColor: 'transparent',
+      title: {
+        text: `${totalDefects}`,
+        subtext: '累計通報件數',
+        left: '50%',
+        top: '40%',
+        textAlign: 'center',
+        textStyle: {
+          color: '#ffffff',
+          fontSize: 26,
+          fontWeight: '900',
+          fontFamily: 'Orbitron, Share Tech Mono, sans-serif'
+        },
+        subtextStyle: {
+          color: '#00f3ff',
+          fontSize: 11,
+          fontFamily: 'Noto Sans TC, sans-serif',
+          fontWeight: '700'
+        }
+      },
       tooltip: {
         trigger: 'item',
         formatter: '{b}: <b>{c} 處</b> ({d}%)',
@@ -66,10 +114,12 @@ export class MunicipalAnalytics {
         textStyle: { color: '#fff', fontFamily: 'Share Tech Mono' }
       },
       legend: {
-        orient: 'vertical',
-        right: '4%',
-        top: 'middle',
-        itemGap: 12,
+        orient: 'horizontal',
+        bottom: 2,
+        left: 'center',
+        itemGap: 14,
+        itemWidth: 10,
+        itemHeight: 10,
         textStyle: {
           color: '#cbd5e1',
           fontSize: 11,
@@ -80,8 +130,8 @@ export class MunicipalAnalytics {
         {
           name: '異常分類',
           type: 'pie',
-          radius: ['45%', '72%'],
-          center: ['36%', '50%'],
+          radius: ['42%', '65%'],
+          center: ['50%', '48%'],
           avoidLabelOverlap: true,
           itemStyle: {
             borderRadius: 4,
@@ -89,16 +139,30 @@ export class MunicipalAnalytics {
             borderWidth: 2
           },
           label: {
-            show: false,
-            position: 'center'
+            show: true,
+            formatter: '{b}: {d}%',
+            color: '#e2e8f0',
+            fontSize: 11,
+            fontFamily: 'Noto Sans TC, Share Tech Mono'
+          },
+          labelLine: {
+            show: true,
+            length: 12,
+            length2: 14,
+            smooth: true,
+            lineStyle: {
+              color: 'rgba(255, 255, 255, 0.45)',
+              width: 1
+            }
           },
           emphasis: {
+            scale: true,
+            scaleSize: 6,
             label: {
               show: true,
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: 'bold',
-              color: '#00f3ff',
-              formatter: '{b}\n{d}%'
+              color: '#00f3ff'
             },
             itemStyle: {
               shadowBlur: 14,
@@ -107,10 +171,10 @@ export class MunicipalAnalytics {
             }
           },
           data: [
-            { value: countTrash || 1, name: '#02 滿溢/遺失垃圾桶', itemStyle: { color: '#ff003c' } },
-            { value: countPavement || 1, name: '#07 地磚坑洞與標線磨損', itemStyle: { color: '#00f3ff' } },
-            { value: countTree || 1, name: '#01 枯木/倒木/空樹穴', itemStyle: { color: '#10b981' } },
-            { value: countHygiene || 1, name: '#03 鼠患堆置死角', itemStyle: { color: '#f59e0b' } }
+            { value: countTrash || (totalDefects === 0 ? 1 : 0), name: '#02 滿溢垃圾桶', itemStyle: { color: '#ff003c' } },
+            { value: countPavement || (totalDefects === 0 ? 1 : 0), name: '#07 步道破損坑洞', itemStyle: { color: '#00f3ff' } },
+            { value: countTree || (totalDefects === 0 ? 1 : 0), name: '#01 枯木倒木斷枝', itemStyle: { color: '#10b981' } },
+            { value: countHygiene || (totalDefects === 0 ? 1 : 0), name: '#03 鼠患堆置熱點', itemStyle: { color: '#f59e0b' } }
           ]
         }
       ]
@@ -268,7 +332,7 @@ export class MunicipalAnalytics {
   }
 
   // Chart 4: 7-Day Trend
-  renderTrendLine() {
+  renderTrendLine(trendData) {
     const el = document.getElementById('chart-trend-line');
     if (!el) return;
 
@@ -276,6 +340,10 @@ export class MunicipalAnalytics {
       this.instances.line = echarts.init(el, 'dark', { renderer: 'canvas' });
     }
     const chart = this.instances.line;
+
+    const dates = (trendData && trendData.dates) ? trendData.dates : ['10/08', '10/09', '10/10', '10/11', '10/12', '10/13', '10/14 (今日)'];
+    const newIncidents = (trendData && trendData.newIncidents) ? trendData.newIncidents : [28, 24, 21, 19, 17, 15, 13];
+    const resolvedIncidents = (trendData && trendData.resolvedIncidents) ? trendData.resolvedIncidents : [18, 20, 22, 21, 20, 18, 19];
 
     const option = {
       backgroundColor: 'transparent',
@@ -300,7 +368,7 @@ export class MunicipalAnalytics {
       xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: ['10/08', '10/09', '10/10', '10/11', '10/12', '10/13', '10/14 (今日)'],
+        data: dates,
         axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.2)' } },
         axisLabel: { color: '#cbd5e1', fontFamily: 'Share Tech Mono' }
       },
@@ -322,7 +390,7 @@ export class MunicipalAnalytics {
               { offset: 1, color: 'rgba(255, 0, 60, 0.01)' }
             ])
           },
-          data: [26, 22, 19, 18, 16, 14, 13]
+          data: newIncidents
         },
         {
           name: '當日修復結案數',
@@ -336,7 +404,7 @@ export class MunicipalAnalytics {
               { offset: 1, color: 'rgba(0, 243, 255, 0.01)' }
             ])
           },
-          data: [15, 18, 20, 21, 19, 17, 18]
+          data: resolvedIncidents
         }
       ]
     };

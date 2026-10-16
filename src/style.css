@@ -1789,8 +1789,9 @@ body.awaken-mode .hud-switch-btn.active .btn-sub {
 .incident-card.selected {
   border-color: var(--hud-cyan);
   border-left: 4px solid var(--hud-cyan);
-  background: rgba(0, 243, 255, 0.08);
-  box-shadow: 0 0 15px rgba(0, 243, 255, 0.25);
+  background: rgba(0, 243, 255, 0.14);
+  box-shadow: 0 0 18px rgba(0, 243, 255, 0.35);
+  transform: translateX(6px);
 }
 
 .card-action-bar {
@@ -2097,8 +2098,8 @@ body.awaken-mode .hud-switch-btn.active .btn-sub {
 }
 
 @keyframes lockBoxPulse {
-  0%, 100% { border-color: var(--psycho-neon); box-shadow: 0 0 15px rgba(255, 0, 60, 0.4); }
-  50% { border-color: var(--psycho-magenta); box-shadow: 0 0 25px rgba(255, 0, 127, 0.6); }
+  0%, 100% { border-color: var(--psycho-neon); box-shadow: 0 0 15px var(--psycho-glow); }
+  50% { border-color: var(--psycho-magenta); box-shadow: 0 0 25px var(--psycho-glow-high); }
 }
 
 @keyframes marqueeScroll {
@@ -2956,38 +2957,48 @@ body.awaken-mode .hud-switch-btn.active .btn-sub {
    ========================================================================== */
 body.awaken-mode {
   --psycho-red: #00e6a8;
+  --psycho-crimson: #059669;
   --psycho-neon: #00ffcc;
   --psycho-glow: rgba(0, 255, 204, 0.45);
+  --psycho-glow-high: rgba(0, 255, 204, 0.95);
   --psycho-magenta: #38ef7d;
+  --psycho-orange: #34d399;
+  --border-dim: rgba(0, 255, 204, 0.22);
+  --border-bright: rgba(0, 255, 204, 0.65);
+  --border-neon: #00ffcc;
 }
+
+/* 1. Cockpit Topbar & Status */
 body.awaken-mode .hud-topbar {
+  border-top-color: #00ffcc;
+  border-color: rgba(0, 255, 204, 0.65);
   border-bottom-color: rgba(0, 255, 204, 0.5);
-  box-shadow: 0 4px 20px rgba(0, 255, 204, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 255, 204, 0.15), inset 0 1px 0 rgba(0, 255, 204, 0.4);
 }
 body.awaken-mode .cockpit-badge-btn {
   border-color: #00ffcc;
   box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
 }
+body.awaken-mode .cockpit-badge-btn:hover {
+  background: rgba(0, 255, 204, 0.12);
+  border-color: rgba(0, 255, 204, 0.5);
+  box-shadow: 0 0 12px rgba(0, 255, 204, 0.35);
+}
+body.awaken-mode .badge-home-tag {
+  background: rgba(0, 255, 204, 0.2);
+  border-color: #00ffcc;
+  color: #00ffcc;
+}
 body.awaken-mode .badge-icon {
   color: #00ffcc;
   text-shadow: 0 0 10px #00ffcc;
 }
+body.awaken-mode .meter-bar-wrap {
+  border-color: rgba(0, 255, 204, 0.4);
+}
 body.awaken-mode .meter-bar {
   background: linear-gradient(90deg, #10b981, #00ffcc, #a7f3d0);
   box-shadow: 0 0 12px #00ffcc;
-}
-body.awaken-mode .panel-box {
-  border-color: rgba(0, 255, 204, 0.25);
-  box-shadow: inset 0 0 20px rgba(0, 255, 204, 0.05);
-}
-body.awaken-mode .panel-status-dot {
-  background: #00ffcc;
-  box-shadow: 0 0 8px #00ffcc;
-}
-body.awaken-mode .btn-hud-primary {
-  background: linear-gradient(135deg, #059669, #10b981);
-  border-color: #00ffcc;
-  box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
 }
 body.awaken-mode .mode-destroy {
   background: rgba(0, 255, 204, 0.15);
@@ -2998,5 +3009,257 @@ body.awaken-mode .mode-destroy {
 body.awaken-mode .hud-volume-slider::-webkit-slider-thumb {
   background: #00ffcc;
   box-shadow: 0 0 6px #00ffcc;
+}
+body.awaken-mode .btn-hub-bgm.playing {
+  color: #00ffcc;
+  text-shadow: 0 0 6px rgba(0, 255, 204, 0.6);
+}
+
+/* 2. Cockpit Structural Panels */
+body.awaken-mode .panel-box {
+  border-color: rgba(0, 255, 204, 0.3);
+  box-shadow: inset 0 0 20px rgba(0, 255, 204, 0.05), 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+body.awaken-mode .panel-header {
+  border-bottom-color: rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .panel-status-dot {
+  background: #00ffcc;
+  box-shadow: 0 0 8px #00ffcc;
+}
+body.awaken-mode .hud-footer {
+  border-color: rgba(0, 255, 204, 0.3);
+}
+
+/* 3. Left Panel: Radar & GIS Viewport Overrides */
+body.awaken-mode .radar-viewport-wrap {
+  border: 1px solid rgba(0, 255, 204, 0.45);
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.85), 0 0 15px rgba(0, 255, 204, 0.2);
+}
+body.awaken-mode .radar-overlay-cross {
+  background: 
+    linear-gradient(to right, transparent 49.5%, rgba(0, 255, 204, 0.25) 50%, transparent 50.5%),
+    linear-gradient(to bottom, transparent 49.5%, rgba(0, 255, 204, 0.25) 50%, transparent 50.5%);
+}
+body.awaken-mode .rover-speed-badge {
+  border-color: #00ffcc;
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.35);
+}
+body.awaken-mode .radar-coords {
+  border-left-color: #00ffcc;
+}
+body.awaken-mode .hud-select {
+  border-color: rgba(0, 255, 204, 0.45);
+}
+body.awaken-mode .hud-select:focus {
+  border-color: #00ffcc;
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+}
+body.awaken-mode .leaflet-control-zoom {
+  border: 1px solid rgba(0, 255, 204, 0.45) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.25) !important;
+}
+body.awaken-mode .leaflet-control-zoom-in,
+body.awaken-mode .leaflet-control-zoom-out {
+  border-bottom: 1px solid rgba(0, 255, 204, 0.25) !important;
+  color: #00ffcc !important;
+}
+body.awaken-mode .leaflet-control-zoom-in:hover,
+body.awaken-mode .leaflet-control-zoom-out:hover {
+  background: rgba(0, 255, 204, 0.25) !important;
+  color: #fff !important;
+}
+
+/* 4. Center Panel: Camera Feed & Reticle HUD */
+body.awaken-mode .camera-feed-viewport {
+  border: 1px solid rgba(0, 255, 204, 0.55);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(0, 255, 204, 0.2);
+}
+body.awaken-mode .target-bracket-left,
+body.awaken-mode .target-bracket-right {
+  border: 2px solid rgba(0, 255, 204, 0.85);
+}
+body.awaken-mode .target-bracket-left { border-right: none; }
+body.awaken-mode .target-bracket-right { border-left: none; }
+body.awaken-mode .hud-target-lock-box {
+  border-color: #00ffcc;
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+}
+body.awaken-mode .incident-inject-toolbar {
+  border-color: rgba(0, 255, 204, 0.35);
+}
+body.awaken-mode .btn-inject {
+  border: 1px solid rgba(0, 255, 204, 0.35);
+}
+body.awaken-mode .btn-inject:hover {
+  background: #059669;
+  border-color: #00ffcc;
+  box-shadow: 0 0 12px rgba(0, 255, 204, 0.5);
+}
+
+/* 5. Right Panel: Incident List, Filters & Cards */
+body.awaken-mode .badge-count {
+  background: rgba(0, 255, 204, 0.2);
+  border-color: #00ffcc;
+  color: #00ffcc;
+}
+body.awaken-mode .generator-controls-card {
+  border-color: rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .hud-num-input {
+  border-color: rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .hud-num-input:focus {
+  border-color: #00ffcc;
+}
+body.awaken-mode .btn-hud-action {
+  border-color: rgba(0, 255, 204, 0.45);
+}
+body.awaken-mode .btn-hud-action:hover {
+  background: rgba(0, 255, 204, 0.25);
+  border-color: #00ffcc;
+}
+body.awaken-mode .btn-hud-secondary {
+  border-color: rgba(0, 255, 204, 0.4);
+}
+body.awaken-mode .btn-hud-secondary:hover {
+  background: rgba(0, 255, 204, 0.2);
+  border-color: #00ffcc;
+}
+body.awaken-mode .btn-hud-primary {
+  background: linear-gradient(135deg, #059669, #10b981);
+  border-color: #00ffcc;
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+}
+body.awaken-mode .category-filters {
+  border-bottom-color: rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .filter-tab.active {
+  background: rgba(0, 255, 204, 0.2);
+  border-color: #00ffcc;
+  color: #fff;
+  box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .incident-card {
+  border: 1px solid rgba(0, 255, 204, 0.25);
+  border-left: 4px solid #00ffcc;
+}
+body.awaken-mode .incident-card:hover {
+  background: rgba(18, 32, 38, 0.9);
+  border-color: #00ffcc;
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.35);
+}
+body.awaken-mode .incident-card.selected {
+  border-color: #ffd700;
+  border-left: 5px solid #ffd700;
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.18), rgba(18, 26, 36, 0.92));
+  box-shadow: 0 0 22px rgba(255, 215, 0, 0.45), inset 0 0 15px rgba(255, 215, 0, 0.12);
+  transform: translateX(6px);
+}
+body.awaken-mode .incident-card.selected .card-dept {
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+body.awaken-mode .incident-card.selected .card-btn-ticket {
+  color: #ffd700;
+}
+body.awaken-mode .sev-high {
+  background: rgba(0, 255, 204, 0.2);
+  border-color: #00ffcc;
+  color: #00ffcc;
+}
+
+/* 6. Municipal Analytics War Room & Nav Tabs */
+body.awaken-mode .hud-view-nav {
+  border-color: rgba(0, 255, 204, 0.4);
+}
+body.awaken-mode .hud-view-tab.active {
+  background: linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(16, 185, 129, 0.22));
+  border-color: #00ffcc;
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+  text-shadow: 0 0 6px rgba(0, 255, 204, 0.6);
+}
+body.awaken-mode .kpi-hud-card {
+  border: 1px solid rgba(0, 255, 204, 0.35);
+  border-left: 4px solid #00ffcc;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(0, 255, 204, 0.08);
+}
+body.awaken-mode .kpi-hud-card:hover {
+  border-color: #00ffcc;
+  box-shadow: 0 6px 24px rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .chart-panel-box {
+  border-color: rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .chart-tag {
+  background: rgba(0, 255, 204, 0.15);
+  color: #00ffcc;
+}
+
+/* 7. 1999 Dispatch Modal & Dialogs */
+body.awaken-mode .modal-dialog {
+  border-color: #00ffcc;
+  box-shadow: 0 0 50px rgba(0, 255, 204, 0.4), inset 0 0 25px rgba(0, 255, 204, 0.15);
+}
+body.awaken-mode .modal-header {
+  border-bottom-color: rgba(0, 255, 204, 0.45);
+}
+body.awaken-mode .modal-footer {
+  border-top-color: rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .visual-wrapper {
+  border-color: rgba(0, 255, 204, 0.45);
+}
+body.awaken-mode .visual-hud-tag {
+  border-color: #00ffcc;
+  color: #00ffcc;
+}
+body.awaken-mode .hud-toast {
+  border-color: #00ffcc;
+  box-shadow: 0 0 25px rgba(0, 255, 204, 0.5);
+}
+
+/* 8. Boot & Cockpit Screen Reticles & Wings */
+body.awaken-mode .hex-radar-wing {
+  border-color: rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .wing-left {
+  background: linear-gradient(90deg, rgba(0, 255, 204, 0.08), transparent);
+}
+body.awaken-mode .wing-right {
+  background: linear-gradient(-90deg, rgba(0, 255, 204, 0.08), transparent);
+}
+body.awaken-mode .monitor-bezel-window {
+  box-shadow: 
+    0 0 50px rgba(0, 0, 0, 0.95),
+    0 0 35px rgba(0, 255, 204, 0.3),
+    inset 0 0 25px rgba(0, 255, 204, 0.15);
+}
+body.awaken-mode .monitor-h-bar {
+  border-top-color: rgba(0, 255, 204, 0.35);
+  border-bottom-color: rgba(0, 255, 204, 0.35);
+}
+body.awaken-mode .dial-outer {
+  border: 3px solid rgba(0, 255, 204, 0.7);
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+}
+body.awaken-mode .dial-mid {
+  border-color: rgba(0, 255, 204, 0.5);
+}
+body.awaken-mode .dial-inner {
+  border-color: rgba(0, 255, 204, 0.35);
+}
+body.awaken-mode .dial-crosshair-h,
+body.awaken-mode .dial-crosshair-v {
+  background: rgba(0, 255, 204, 0.3);
+}
+body.awaken-mode .btn-ntd-ghost {
+  border-color: rgba(0, 255, 204, 0.4);
+}
+body.awaken-mode .btn-ntd-ghost:hover {
+  border-color: #00ffcc;
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
 }
 

@@ -13,6 +13,7 @@ import { RadarRenderer, CameraRenderer, FlameRenderer } from './modules/canvas.j
 const SECTORS = window.RX0_DATA ? window.RX0_DATA.SECTORS : {};
 const INCIDENT_TEMPLATES = window.RX0_DATA ? window.RX0_DATA.INCIDENT_TEMPLATES : {};
 const PRESET_INSPECTIONS = window.RX0_DATA ? window.RX0_DATA.PRESET_INSPECTIONS : [];
+const HISTORICAL_TREND_7D = window.RX0_DATA ? window.RX0_DATA.HISTORICAL_TREND_7D : null;
 const generateSnapshotSvg = window.RX0_DATA ? window.RX0_DATA.generateSnapshotSvg : () => '';
 
 export class TaipeiDebuggerApp {
@@ -290,15 +291,36 @@ export class TaipeiDebuggerApp {
     });
 
     // 10. Modals: 1999 Ticket & Laplace's Box
-    const btnCloseModal = document.getElementById('modal-close-btn');
-    if (btnCloseModal) {
-      btnCloseModal.addEventListener('click', () => this.closeModal());
+    const ticketCloseIds = ['modal-close', 'modal-close-btn', 'modal-cancel-btn', 'modal-backdrop'];
+    ticketCloseIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          try { audio.playClick(); } catch (_) {}
+          this.closeModal();
+        });
+      }
+    });
+
+    const btnSubmitMock = document.getElementById('modal-submit-mock-btn');
+    if (btnSubmitMock) {
+      btnSubmitMock.addEventListener('click', () => {
+        try { audio.playDispatchSuccess(); } catch (_) {}
+        if (this.selectedIncident) {
+          this.selectedIncident.status = 'dispatched';
+          this.renderStatsAndMetrics();
+          this.renderIncidentList();
+          this.showToast(`🚀 [1999 自動派工] ${this.selectedIncident.id} 已正式派發至主管局處！`);
+        }
+        this.closeModal();
+      });
     }
 
     const btnDispatchNow = document.getElementById('btn-dispatch-now');
     if (btnDispatchNow) {
       btnDispatchNow.addEventListener('click', () => {
-        audio.playDispatchSuccess();
+        try { audio.playDispatchSuccess(); } catch (_) {}
         if (this.selectedIncident) {
           this.selectedIncident.status = 'dispatched';
           this.renderStatsAndMetrics();
@@ -314,9 +336,24 @@ export class TaipeiDebuggerApp {
       btnLaplace.addEventListener('click', () => this.openLaplaceModal());
     }
 
-    ['laplace-close-btn', 'laplace-dismiss-btn'].forEach((id) => {
+    const laplaceCloseIds = ['laplace-close', 'laplace-close-btn', 'laplace-dismiss-btn', 'laplace-backdrop'];
+    laplaceCloseIds.forEach((id) => {
       const el = document.getElementById(id);
-      if (el) el.addEventListener('click', () => this.closeLaplaceModal());
+      if (el) {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          try { audio.playClick(); } catch (_) {}
+          this.closeLaplaceModal();
+        });
+      }
+    });
+
+    // Global ESC key to close any open modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.closeModal();
+        this.closeLaplaceModal();
+      }
     });
 
     const btnAwaken = document.getElementById('btn-awaken-psycho');
@@ -360,12 +397,25 @@ export class TaipeiDebuggerApp {
     }
 
     if (this.currentView === 'analytics') {
-      this.analytics.init(this.currentDate, PRESET_INSPECTIONS);
+      this.analytics.init(this.currentDate, this.getMergedIncidentsPool(), HISTORICAL_TREND_7D);
     }
 
     if (this.gis.map) {
       this.gis.update(this.currentSectorKey, this.activeIncidents, this.currentFilter);
     }
+  }
+
+  getMergedIncidentsPool() {
+    const activeMap = new Map();
+    (this.activeIncidents || []).forEach((item) => activeMap.set(item.id, item));
+
+    const merged = PRESET_INSPECTIONS.map((item) => activeMap.get(item.id) || item);
+    (this.activeIncidents || []).forEach((item) => {
+      if (!merged.some((m) => m.id === item.id)) {
+        merged.push(item);
+      }
+    });
+    return merged;
   }
 
   renderStatsAndMetrics() {
@@ -1023,7 +1073,7 @@ export class TaipeiDebuggerApp {
     if (viewName === 'analytics') {
       if (tacticalGrid) tacticalGrid.classList.add('hidden');
       if (analyticsView) analyticsView.classList.remove('hidden');
-      this.analytics.init(this.currentDate, PRESET_INSPECTIONS);
+      this.analytics.init(this.currentDate, this.getMergedIncidentsPool(), HISTORICAL_TREND_7D);
       this.showToast('📊 已切換至：市政物件統計與工務局解決進度戰報');
     } else {
       if (analyticsView) analyticsView.classList.add('hidden');

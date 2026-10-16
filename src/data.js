@@ -795,11 +795,21 @@ const PRESET_INSPECTIONS = [
   }
 ];
 
+  // ============================================================================
+  // 4. MUNICIPAL 7-DAY HISTORICAL TREND DATASET
+  // ============================================================================
+  const HISTORICAL_TREND_7D = {
+    dates: ['10/08', '10/09', '10/10', '10/11', '10/12', '10/13', '10/14 (今日)'],
+    newIncidents: [28, 24, 21, 19, 17, 15, 13],
+    resolvedIncidents: [18, 20, 22, 21, 20, 18, 19]
+  };
+
   // Attach data objects to global window scope for modular use
   window.RX0_DATA = {
     SECTORS,
     INCIDENT_TEMPLATES,
     PRESET_INSPECTIONS,
+    HISTORICAL_TREND_7D,
     generateSnapshotSvg
   };
 })();

@@ -576,7 +576,7 @@
             <span class="kpi-unit">%</span>
             <span class="kpi-trend positive">▲ 平均處置加速 3.2 倍</span>
           </div>
-          <div class="kpi-sub">108 件完成復原 · 20 件施工搶修中</div>
+          <div class="kpi-sub" id="kpi-resolve-sub">108 件完成復原 · 20 件施工搶修中</div>
         </div>
 
         <div class="kpi-hud-card highlight-purple">
@@ -668,14 +668,14 @@
   <!-- 3. MODAL: 1999 市政派工工單預覽 (DISPATCH TICKET PREVIEW)       -->
   <!-- ============================================================== -->
   <div class="hud-modal" id="ticket-modal">
-    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-backdrop" id="modal-backdrop" onclick="window.app && window.app.closeModal()"></div>
     <div class="modal-dialog">
       <div class="modal-header">
         <div class="modal-title-wrap">
           <span class="modal-badge">1999 DISPATCH TICKET</span>
           <h3 id="modal-incident-title">自動生成市政派工單 #2026-1024-001</h3>
         </div>
-        <button class="modal-close-btn" id="modal-close">&times;</button>
+        <button class="modal-close-btn" id="modal-close" onclick="window.app && window.app.closeModal()">&times;</button>
       </div>
 
       <div class="modal-body">
@@ -723,7 +723,7 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-hud-ghost" id="modal-cancel-btn">關閉視窗</button>
+        <button class="btn-hud-ghost" id="modal-cancel-btn" onclick="window.app && window.app.closeModal()">關閉視窗</button>
         <button class="btn-hud-primary" id="modal-submit-mock-btn">
           🚀 模擬傳送至台北市 1999 陳情派工系統 (API MOCK)
         </button>
@@ -735,7 +735,7 @@
   <!-- 4. MODAL: 拉普拉斯之盒 · 宇宙世紀憲章 第七章 第十五條 第二款彩蛋   -->
   <!-- ============================================================== -->
   <div class="hud-modal laplace-modal" id="laplace-modal">
-    <div class="modal-backdrop" id="laplace-backdrop"></div>
+    <div class="modal-backdrop" id="laplace-backdrop" onclick="window.app && window.app.closeLaplaceModal()"></div>
     <div class="modal-dialog laplace-dialog">
       <div class="laplace-monument-frame">
         <div class="laplace-header">
@@ -744,7 +744,7 @@
             <h2 class="laplace-title">UNIVERSAL CENTURY CHARTER // 宇宙世紀憲章</h2>
             <div class="laplace-sub">第七章 · 第十五條 · 第二款 // CHAPTER VII · ARTICLE XV, CLAUSE II</div>
           </div>
-          <button class="modal-close-btn" id="laplace-close">&times;</button>
+          <button class="modal-close-btn" id="laplace-close" onclick="window.app && window.app.closeLaplaceModal()">&times;</button>
         </div>
 
         <div class="laplace-body">
@@ -795,7 +795,7 @@
         </div>
 
         <div class="laplace-footer">
-          <button class="btn-hud-ghost" id="laplace-dismiss-btn">關閉石碑</button>
+          <button class="btn-hud-ghost" id="laplace-dismiss-btn" onclick="window.app && window.app.closeLaplaceModal()">關閉石碑</button>
           <button class="btn-awaken-toggle" id="btn-awaken-psycho">
             <span class="awaken-icon">🌟</span>
             <span class="awaken-text" id="awaken-btn-text">觸發精神感應狂潮 // 覺醒綠光新人類模式</span>
